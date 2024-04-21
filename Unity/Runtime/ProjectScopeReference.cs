@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace NestedDIContainer.Unity.Runtime
 {
@@ -20,8 +21,15 @@ namespace NestedDIContainer.Unity.Runtime
         
         internal ProjectScope CreateProjectScope()
         {
+            if (_projectScope == null)
+                throw new Exception("ProjectScope is not set. Please set the ProjectScope in the ProjectScopeReference.");
+            
+            _projectScope.gameObject.SetActive(false);
             var instance = Instantiate(_projectScope, null);
             DontDestroyOnLoad(instance);
+
+            _projectScope.gameObject.SetActive(true);
+            
             return instance;
         }
     }

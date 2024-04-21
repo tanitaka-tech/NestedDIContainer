@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using Cysharp.Threading.Tasks;
 using TanitakaTech.NestedDIContainer;
 using UnityEngine;
@@ -10,8 +8,10 @@ namespace NestedDIContainer.Unity.Runtime
 {
     public abstract class ProjectScope : MonoBehaviourScope
     {
-        internal static IScope Scope => _scope;
+        internal static ProjectScope Scope => _scope;
         private static ProjectScope _scope;
+        internal ScopeId ScopeId => _scopeId;
+        private ScopeId _scopeId;
 
         internal static ProjectScope CreateProjectScope()
         {
@@ -19,12 +19,24 @@ namespace NestedDIContainer.Unity.Runtime
             {
                 return _scope;
             }
-            var projectScopeReference = Resources.Load($"Assets/Resources/ProjectScopeReference.asset") as ProjectScopeReference;
+            var loaded = Resources.Load($"ProjectScopeReference");
+            var projectScopeReference = loaded as ProjectScopeReference;
             if (projectScopeReference == null)
             {
                 throw new Exception("ProjectScopeReference was not found. Please check the ProjectSettings.");
             }
             _scope = projectScopeReference.CreateProjectScope();
+            _scope._scopeId = ScopeId.Create();
+            NestedScopes.Add(_scope._scopeId, ProjectScope._scope);
+            
+            var boundType = new System.Collections.Generic.List<System.Type>();
+            ((IScope)_scope).Construct(new DependencyBinder(ProjectScope.Modules, _scope._scopeId, ref boundType), null);
+            _scope.GetCancellationTokenOnDestroy().Register(() =>
+            {
+                boundType.ForEach(type => ProjectScope.Modules.Remove(_scope._scopeId, type));
+                ProjectScope.NestedScopes.Remove(_scope._scopeId);
+            });
+
             return _scope;
         }
 
@@ -61,15 +73,9 @@ namespace NestedDIContainer.Unity.Runtime
         
         protected void Awake()
         {
-            base.Awake();
             _scope = this;
             if (gameObject.scene.name != "DontDestroyOnLoad")
                 throw new ConstructException("ProjectScope must not be in a scene");
-        }
-        
-        public void Start()
-        {
-            InitializeAsyncInternal(this.GetCancellationTokenOnDestroy()).Forget();
         }
 
         public void OnDestroy()
@@ -79,23 +85,5 @@ namespace NestedDIContainer.Unity.Runtime
             _scope = null;
             _tempConfig = null;
         }
-        
-        protected override async UniTask InitializeAsyncInternal(CancellationToken cancellationToken)
-        {
-            await InitializeAsync(cancellationToken);
-
-            var orderedAllNestedScope = NestedScopes.GetOrderedAllNestedScope(Scope);
-            foreach (var initGroup in orderedAllNestedScope)
-            {
-                await UniTask.WhenAll(
-                    initGroup
-                        .Where(scope => (ProjectScope)scope != this)
-                        .Cast<IInternalAsyncInitializer>()
-                        .Select(initializer => initializer.InitializeAsyncInternal(cancellationToken))
-                );
-            }
-        }
-
-        protected abstract UniTask InitializeAsync(CancellationToken cancellationToken);
     }
 }

@@ -21,7 +21,9 @@ namespace TanitakaTech.NestedDIContainer
         
         public void Remove(ScopeId belongingScopeId, Type type)
         {
-            Value.Remove(new ModuleRelation(belongingScopeId, type));
+            var key = new ModuleRelation(belongingScopeId, type);
+            (Value[key] as IDisposable)?.Dispose();
+            Value.Remove(key);
         }
         
         public T Resolve<T>(ScopeId callScopeId) => (T) Resolve(typeof(T), callScopeId);
@@ -32,7 +34,7 @@ namespace TanitakaTech.NestedDIContainer
                 return module;
             
             var callScope = NestedScopes.Get(callScopeId);
-            var parentScopeIdNullable = callScope.ParentScopeId;
+            var parentScopeIdNullable = callScope?.ParentScopeId;
             
             while (parentScopeIdNullable != null)
             {
@@ -42,7 +44,13 @@ namespace TanitakaTech.NestedDIContainer
                     return module2;
                 parentScopeIdNullable = NestedScopes.Get(parentScopeId).ParentScopeId;
             }
-            throw new ConstructException($"Module not found: {type}, {callScope}");
+            ThrowException(type: type, callScope: callScope);
+            return null;
+            
+            void ThrowException(Type type, IScope callScope)
+            {
+                throw new ConstructException($"Module not found: {type}, {callScope}");
+            }
         }
     }
 
