@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using Cysharp.Threading.Tasks;
+using NestedDIContainer.Unity.Runtime.Core;
 using TanitakaTech.NestedDIContainer;
 using UnityEngine;
 

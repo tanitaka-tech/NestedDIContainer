@@ -16,7 +16,11 @@ namespace TanitakaTech.NestedDIContainer
         
         public void Bind(ScopeId belongingScopeId, Type type, object module)
         {
-            Value.Add(new ModuleRelation(belongingScopeId, type), module);
+            var key = new ModuleRelation(belongingScopeId, type);
+            if (!Value.TryAdd(key, module))
+            {
+                throw new ConstructException($"Module already exists: {type}, {belongingScopeId}");
+            }
         }
         
         public void Remove(ScopeId belongingScopeId, Type type)

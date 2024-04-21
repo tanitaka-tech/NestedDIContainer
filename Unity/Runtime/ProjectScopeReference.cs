@@ -27,8 +27,8 @@ namespace NestedDIContainer.Unity.Runtime
             _projectScope.gameObject.SetActive(false);
             var instance = Instantiate(_projectScope, null);
             DontDestroyOnLoad(instance);
-
-            _projectScope.gameObject.SetActive(true);
+            
+            instance.gameObject.SetActive(true);
             
             return instance;
         }
