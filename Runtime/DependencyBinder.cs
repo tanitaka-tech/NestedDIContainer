@@ -55,6 +55,13 @@ namespace TanitakaTech.NestedDIContainer
         }
         
         public void Bind<T>(T instance) => Bind(typeof(T), instance);
+        
+        public void Bind<TInstance, T1, T2>(TInstance instance) where TInstance : T1, T2
+        {
+            Bind(typeof(T1), instance);
+            Bind(typeof(T2), instance);
+        }
+        
         public void Bind<T1, T2>(object instance)
         {
             if( instance is T1 == false || instance is T2 == false)

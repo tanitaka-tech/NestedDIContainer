@@ -15,6 +15,8 @@ namespace NestedDIContainer.Unity.Runtime
 
         internal static ProjectScope CreateProjectScope()
         {
+            Dispose();
+            
             if (_scope != null)
             {
                 return _scope;
@@ -77,8 +79,13 @@ namespace NestedDIContainer.Unity.Runtime
             if (gameObject.scene.name != "DontDestroyOnLoad")
                 throw new ConstructException("ProjectScope must not be in a scene");
         }
+        
+        protected void OnDestroy()
+        {
+            Dispose();
+        }
 
-        public void OnDestroy()
+        private static void Dispose()
         {
             _nestedScopes = null;
             _modules = null;
