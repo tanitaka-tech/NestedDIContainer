@@ -15,5 +15,7 @@ namespace NestedDIContainer.Unity.Runtime.Core
             Construct(binder, config);
         }
         protected abstract void Construct(DependencyBinder binder, object config);
+        void IScope.Initialize() => Initialize();
+        protected virtual void Initialize() {}
     }
 }

@@ -49,6 +49,9 @@ namespace NestedDIContainer.Unity.Runtime
             // Bind
             Construct(binder, (TConfig)ProjectScope.PopConfig());
             
+            // Initialize
+            Initialize();
+            
             // Unbind on destroy
             this.GetCancellationTokenOnDestroy().Register(() =>
             {
@@ -87,6 +90,7 @@ namespace NestedDIContainer.Unity.Runtime
                     Inject(child.scope, child.parentScopeId);
                     var childBinder = new DependencyBinder(ProjectScope.Modules, child.scopeId, ref childBoundTypes);
                     ((IScope)child.scope).Construct(childBinder, null);
+                    ((IScope)child.scope).Initialize();
                 });
             }
         }
@@ -147,5 +151,7 @@ namespace NestedDIContainer.Unity.Runtime
             Construct(binder, (TConfig)config);
         }
         protected abstract void Construct(DependencyBinder binder, TConfig config);
+        void IScope.Initialize() => Initialize();
+        protected virtual void Initialize() {}
     }
 }

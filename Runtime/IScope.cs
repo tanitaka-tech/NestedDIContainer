@@ -4,5 +4,6 @@
     {
         ScopeId? ParentScopeId { get; }
         void Construct(DependencyBinder binder, object config);
+        void Initialize();
     }
 }
