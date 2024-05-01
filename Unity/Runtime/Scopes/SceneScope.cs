@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Cysharp.Threading.Tasks;
 using NestedDIContainer.Unity.Runtime.Core;
 using TanitakaTech.NestedDIContainer;
@@ -15,17 +14,12 @@ namespace NestedDIContainer.Unity.Runtime
         protected abstract void Construct(DependencyBinder binder);
     }
     
-    public abstract class SceneScopeWithConfig<TConfig> : MonoBehaviour, IScope
+    public abstract class SceneScopeWithConfig<TConfig> : MonoBehaviourScopeBase, IScope
     {
-        [SerializeField] private List<ScriptableObjectExtendScope> _extendScopes;
-        
         ScopeId? IScope.ParentScopeId => _parentScopeId;
         
         private ScopeId? _scopeId = null;
         private ScopeId? _parentScopeId = null;
-        
-         private const BindingFlags MemberBindingFlags =
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly;
         
         protected void Awake()
         {
@@ -34,30 +28,7 @@ namespace NestedDIContainer.Unity.Runtime
             var parentScope = ProjectScope.Scope ?? ProjectScope.CreateProjectScope();
             _parentScopeId = _scopeId.Equals(parentScope.ScopeId) ? ScopeId.Create() : parentScope.ScopeId;
             
-            var boundTypes = new List<System.Type>();
-            var binder = new DependencyBinder(ProjectScope.Modules, _scopeId.Value, ref boundTypes);
-            
-            // Construct ScriptableObjectExtendScope
-            _extendScopes.ForEach(extendScope => binder.ExtendScope(extendScope));
-            
-            // Inject
-            Inject(this, _scopeId.Value);
-            
-            // Add Scope
-            ProjectScope.NestedScopes.Add(_scopeId.Value, this);
-            
-            // Bind
-            Construct(binder, (TConfig)ProjectScope.PopConfig());
-            
-            // Initialize
-            Initialize();
-            
-            // Unbind on destroy
-            this.GetCancellationTokenOnDestroy().Register(() =>
-            {
-                ProjectScope.NestedScopes.Remove(_scopeId.Value);
-                boundTypes.ForEach(type => ProjectScope.Modules.Remove(_scopeId.Value, type));
-            });
+            InitializeScope(_scopeId.Value, _parentScopeId.Value);
 
             // Inject Children
             List<List<(MonoBehaviourScopeBase scope, ScopeId scopeId, ScopeId parentScopeId)>> childrenGroups = new();
@@ -85,16 +56,12 @@ namespace NestedDIContainer.Unity.Runtime
                 // TODO: Concurrent Inject & Construct
                 childrenGroup.ForEach(child =>
                 {
-                    var childBoundTypes = new List<System.Type>();
-                    ProjectScope.NestedScopes.Add(child.scopeId, child.scope);
-                    Inject(child.scope, child.parentScopeId);
-                    var childBinder = new DependencyBinder(ProjectScope.Modules, child.scopeId, ref childBoundTypes);
-                    ((IScope)child.scope).Construct(childBinder, null);
-                    ((IScope)child.scope).Initialize();
+                    child.scope.InitializeScope(scopeId: child.scopeId, parentScopeId: child.parentScopeId);
                 });
             }
         }
-        
+
+
         private List<T> FindComponentsInChildrenOnce<T>(GameObject parent)
         {
             List<T> foundComponents = new List<T>();
@@ -120,36 +87,8 @@ namespace NestedDIContainer.Unity.Runtime
                 FindComponentsRecursive(child, foundComponents);
             }
         }
-
-        private void Inject(
-            IScope scope,
-            ScopeId scopeId)
-        {
-            var type = scope.GetType();
-            var fields = type.GetFields(MemberBindingFlags);
-            foreach (var field in fields)
-            {
-                var injectAttr = field.GetCustomAttribute<InjectAttribute>();
-                if (injectAttr != null)
-                {
-                    field.SetValue(scope, ProjectScope.Modules.Resolve(field.FieldType, scopeId));
-                }
-            }
-            var props = type.GetProperties(MemberBindingFlags);
-            foreach (var prop in props)
-            {
-                var injectAttr = prop.GetCustomAttribute<InjectAttribute>();
-                if (injectAttr != null)
-                {
-                    prop.SetValue(scope, ProjectScope.Modules.Resolve(prop.PropertyType, scopeId));
-                }
-            }
-        }
         
-        void IScope.Construct(DependencyBinder binder, object config)
-        {
-            Construct(binder, (TConfig)config);
-        }
+        protected override void Construct(DependencyBinder binder, object config) => Construct(binder, (TConfig)config);
         protected abstract void Construct(DependencyBinder binder, TConfig config);
         void IScope.Initialize() => Initialize();
         protected virtual void Initialize() {}
