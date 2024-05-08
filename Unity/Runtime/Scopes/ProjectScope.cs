@@ -29,16 +29,7 @@ namespace NestedDIContainer.Unity.Runtime
             }
             _scope = projectScopeReference.CreateProjectScope();
             _scope._scopeId = ScopeId.Create();
-            NestedScopes.Add(_scope._scopeId, ProjectScope._scope);
-            
-            var boundType = new System.Collections.Generic.List<System.Type>();
-            ((IScope)_scope).Construct(new DependencyBinder(ProjectScope.Modules, _scope._scopeId, ref boundType), null);
-            _scope.GetCancellationTokenOnDestroy().Register(() =>
-            {
-                boundType.ForEach(type => ProjectScope.Modules.Remove(_scope._scopeId, type));
-                ProjectScope.NestedScopes.Remove(_scope._scopeId);
-            });
-
+            _scope.InitializeScope(_scope._scopeId, ScopeId.Create());
             return _scope;
         }
 
