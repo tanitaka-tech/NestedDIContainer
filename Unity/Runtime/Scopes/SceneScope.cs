@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Cysharp.Threading.Tasks;
 using NestedDIContainer.Unity.Runtime.Core;
 using TanitakaTech.NestedDIContainer;
 using UnityEngine;
@@ -14,13 +13,15 @@ namespace NestedDIContainer.Unity.Runtime
         protected abstract void Construct(DependencyBinder binder);
     }
     
-    public abstract class SceneScopeWithConfig<TConfig> : MonoBehaviourScopeBase, IScope
+    public abstract class SceneScopeWithConfig<TConfig> : MonoBehaviourScopeBase,
+        IScope
     {
         ScopeId? IScope.ParentScopeId => _parentScopeId;
         
         private ScopeId? _scopeId = null;
         private ScopeId? _parentScopeId = null;
-        
+        public static TConfig Config { get; set; } = default;
+
         protected void Awake()
         {
             // Init ScopeId
@@ -28,7 +29,8 @@ namespace NestedDIContainer.Unity.Runtime
             var parentScope = ProjectScope.Scope ?? ProjectScope.CreateProjectScope();
             _parentScopeId = _scopeId.Equals(parentScope.ScopeId) ? ScopeId.Create() : parentScope.ScopeId;
             
-            InitializeScope(_scopeId.Value, _parentScopeId.Value);
+            InitializeScope(_scopeId.Value, _parentScopeId.Value, Config);
+            Config = default;
 
             // Inject Children
             List<List<(MonoBehaviourScopeBase scope, ScopeId scopeId, ScopeId parentScopeId)>> childrenGroups = new();
@@ -53,7 +55,6 @@ namespace NestedDIContainer.Unity.Runtime
             
             foreach (var childrenGroup in childrenGroups)
             {
-                // TODO: Concurrent Inject & Construct
                 childrenGroup.ForEach(child =>
                 {
                     child.scope.InitializeScope(scopeId: child.scopeId, parentScopeId: child.parentScopeId);
