@@ -7,7 +7,7 @@
     "description": "",
     "keywords": [ "DIContainer", "Unity" ],
     "license": "MIT",
-    "category": "Editor",
+    "category": "Script",
     "dependencies": {
     }
 }
