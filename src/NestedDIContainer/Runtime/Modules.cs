@@ -46,7 +46,7 @@ namespace TanitakaTech.NestedDIContainer
                 
                 if (Value.TryGetValue(new ModuleRelation(parentScopeId, type), out var module2))
                     return module2;
-                parentScopeIdNullable = NestedScopes.Get(parentScopeId).ParentScopeId;
+                parentScopeIdNullable = NestedScopes.Get(parentScopeId)?.ParentScopeId;
             }
             ThrowException(type: type, callScope: callScope);
             return null;
