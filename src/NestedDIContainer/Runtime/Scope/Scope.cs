@@ -14,8 +14,8 @@
     public abstract class Scope<TConfig> : IScope
         where TConfig : class
     {
-        ScopeId? IScope.ParentScopeId => _parentScopeId;
-        private ScopeId? _parentScopeId;
+        public ScopeId? ParentScopeId { get; set; }
+        public ScopeId ScopeId { get; set; }
 
         void IScope.Construct(DependencyBinder binder, object config)
         {

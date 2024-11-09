@@ -2,8 +2,9 @@
 {
     public interface IScope
     {
-        ScopeId? ParentScopeId { get; }
         void Construct(DependencyBinder binder, object config);
         void Initialize();
+        ScopeId ScopeId { get; internal set; }
+        ScopeId? ParentScopeId { get; internal set; }
     }
 }
