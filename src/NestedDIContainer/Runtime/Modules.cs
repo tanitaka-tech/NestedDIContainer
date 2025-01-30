@@ -7,14 +7,14 @@ namespace TanitakaTech.NestedDIContainer
     public class Modules
     {
         private Dictionary<ModuleRelation, object> Value { get; }
-        private NestedScopes NestedScopes { get; }
+        private Dictionary<ScopeId, IScope> Scopes { get; }
 
-        public Modules(Dictionary<ModuleRelation, object> value, NestedScopes nestedScopes)
+        public Modules(Dictionary<ModuleRelation, object> value, Dictionary<ScopeId, IScope> scopes)
         {
             Value = value;
-            NestedScopes = nestedScopes;
+            Scopes = scopes;
         }
-        
+
         public void Bind(ScopeId belongingScopeId, Type type, object module)
         {
             var key = new ModuleRelation(belongingScopeId, type);
@@ -51,7 +51,7 @@ namespace TanitakaTech.NestedDIContainer
             if (Value.TryGetValue(new ModuleRelation(callScopeId, type), out var module))
                 return module;
             
-            var callScope = NestedScopes.Get(callScopeId);
+            Scopes.TryGetValue(callScopeId, out var callScope);
             var parentScopeIdNullable = callScope?.ParentScopeId;
             
             while (parentScopeIdNullable != null)
@@ -60,7 +60,9 @@ namespace TanitakaTech.NestedDIContainer
                 
                 if (Value.TryGetValue(new ModuleRelation(parentScopeId, type), out var module2))
                     return module2;
-                parentScopeIdNullable = NestedScopes.Get(parentScopeId)?.ParentScopeId;
+
+                Scopes.TryGetValue(parentScopeId, out var parentScope);
+                parentScopeIdNullable = parentScope?.ParentScopeId;
             }
             ThrowException(type: type, callScope: callScope);
             return null;

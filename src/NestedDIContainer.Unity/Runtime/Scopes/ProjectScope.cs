@@ -32,20 +32,20 @@ namespace NestedDIContainer.Unity.Runtime
             return _scope;
         }
 
-        internal static NestedScopes NestedScopes
+        internal static Dictionary<ScopeId, IScope> Scopes
         {
             get
             {
-                _nestedScopes ??= new NestedScopes(new Dictionary<ScopeId, IScope>());
-                return _nestedScopes;
+                _scopes ??= new Dictionary<ScopeId, IScope>();
+                return _scopes;
             }
         }
-        private static NestedScopes _nestedScopes;
+        private static Dictionary<ScopeId, IScope> _scopes;
         public static Modules Modules
         {
             get
             {
-                _modules ??= new Modules(new Dictionary<ModuleRelation, object>(), NestedScopes);
+                _modules ??= new Modules(new Dictionary<ModuleRelation, object>(), Scopes);
                 return _modules;
             }
         }
@@ -77,7 +77,7 @@ namespace NestedDIContainer.Unity.Runtime
 
         private static void Dispose()
         {
-            _nestedScopes = null;
+            _scopes = null;
             _modules = null;
             _scope = null;
             _tempConfig = null;

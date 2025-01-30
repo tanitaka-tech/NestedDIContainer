@@ -47,13 +47,13 @@ namespace NestedDIContainer.Unity.Runtime.Core
             
             _extendScopes.ForEach(extendScope => childBinder.ExtendScope(extendScope));
             
-            ProjectScope.NestedScopes.Add(scopeId, this);
+            ProjectScope.Scopes.Add(scopeId, this);
             Inject(this, parentScopeId);
             ((IScope)this).Construct(childBinder, config);
             ((IScope)this).Initialize();
             this.GetCancellationTokenOnDestroy().Register(() =>
             {
-                ProjectScope.NestedScopes.Remove(scopeId);
+                ProjectScope.Scopes.Remove(scopeId);
                 ProjectScope.Modules.RemoveScope(scopeId);
             });
         }
