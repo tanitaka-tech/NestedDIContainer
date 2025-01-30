@@ -16,10 +16,8 @@ namespace NestedDIContainer.Unity.Runtime
     public abstract class SceneScopeWithConfig<TConfig> : MonoBehaviourScopeBase,
         IScope
     {
-        ScopeId? IScope.ParentScopeId => _parentScopeId;
-        
+
         private ScopeId? _scopeId = null;
-        private ScopeId? _parentScopeId = null;
         public static TConfig Config { get; set; } = default;
 
         protected void Awake()
@@ -27,9 +25,9 @@ namespace NestedDIContainer.Unity.Runtime
             // Init ScopeId
             _scopeId = ScopeId.Create();
             var parentScope = ProjectScope.Scope ?? ProjectScope.CreateProjectScope();
-            _parentScopeId = _scopeId.Equals(parentScope.ScopeId) ? ScopeId.Create() : parentScope.ScopeId;
+            ParentScopeId = _scopeId.Equals(parentScope.ScopeId) ? ScopeId.Create() : parentScope.ScopeId;
             
-            InitializeScope(_scopeId.Value, _parentScopeId.Value, Config);
+            InitializeScope(_scopeId.Value, ParentScopeId.Value, Config);
             Config = default;
 
             // Inject Children

@@ -9,10 +9,10 @@ namespace NestedDIContainer.Unity.Runtime.Core
     public abstract class MonoBehaviourScopeBase : MonoBehaviour, IScope
     {
         [SerializeField] protected List<ScriptableObjectExtendScope> _extendScopes;
-        ScopeId? IScope.ParentScopeId => _parentScopeId;
-        private ScopeId? _parentScopeId = null;
-        private ScopeId _scopeId;
-        
+
+        public ScopeId ScopeId { get; set; }
+        public ScopeId? ParentScopeId { get; set; }
+
         private const BindingFlags MemberBindingFlags =
             BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly;
 
@@ -27,7 +27,7 @@ namespace NestedDIContainer.Unity.Runtime.Core
         public T Instantiate<T>(T prefab, Transform parent, object config = null) where T : MonoBehaviourScopeBase
         {
             var instance = UnityEngine.Object.Instantiate(prefab, parent);
-            instance.InitializeScope(ScopeId.Create(), _scopeId, config);
+            instance.InitializeScope(ScopeId.Create(), ScopeId, config);
             return instance;
         }
         
@@ -35,14 +35,14 @@ namespace NestedDIContainer.Unity.Runtime.Core
             where TConfig : class
         {
             var instance = UnityEngine.Object.Instantiate(prefab, parent);
-            instance.InitializeScope(ScopeId.Create(), _scopeId, config);
+            instance.InitializeScope(ScopeId.Create(), ScopeId, config);
             return instance;
         }
         
         internal void InitializeScope(ScopeId scopeId, ScopeId parentScopeId, object config = null)
         {
-            _scopeId = scopeId;
-            _parentScopeId = parentScopeId;
+            ScopeId = scopeId;
+            ParentScopeId = parentScopeId;
             var childBoundTypes = new List<System.Type>();
             var childBinder = new DependencyBinder(ProjectScope.Modules, scopeId, ref childBoundTypes);
             
