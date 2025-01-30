@@ -4,7 +4,7 @@
     {
         void Construct(DependencyBinder binder, object config);
         void Initialize();
-        ScopeId ScopeId { get; internal set; }
-        ScopeId? ParentScopeId { get; internal set; }
+        ScopeId ScopeId { get; set; }
+        ScopeId? ParentScopeId { get; set; }
     }
 }
