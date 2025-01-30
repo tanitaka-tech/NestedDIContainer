@@ -8,13 +8,11 @@ namespace TanitakaTech.NestedDIContainer
     {
         private ScopeId ScopeId { get; }
         private readonly Modules _bindingModules;
-        private readonly List<Type> _boundTypes;
 
-        public DependencyBinder(Modules bindingModules, ScopeId scopeId, ref List<Type> boundTypes)
+        public DependencyBinder(Modules bindingModules, ScopeId scopeId)
         {
             ScopeId = scopeId;
             _bindingModules = bindingModules;
-            _boundTypes = boundTypes;
         }
         
         public void ExtendScope(IExtendScope scope)
@@ -51,7 +49,6 @@ namespace TanitakaTech.NestedDIContainer
                 throw new ConstructException("Binding failed: no container assigned!");
 
             _bindingModules.Bind(ScopeId, type, instance);
-            _boundTypes.Add(type);
         }
         
         public void Bind<T>(T instance) => Bind(typeof(T), instance);

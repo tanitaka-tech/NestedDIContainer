@@ -43,8 +43,7 @@ namespace NestedDIContainer.Unity.Runtime.Core
         {
             ScopeId = scopeId;
             ParentScopeId = parentScopeId;
-            var childBoundTypes = new List<System.Type>();
-            var childBinder = new DependencyBinder(ProjectScope.Modules, scopeId, ref childBoundTypes);
+            var childBinder = new DependencyBinder(ProjectScope.Modules, scopeId);
             
             _extendScopes.ForEach(extendScope => childBinder.ExtendScope(extendScope));
             
@@ -55,8 +54,7 @@ namespace NestedDIContainer.Unity.Runtime.Core
             this.GetCancellationTokenOnDestroy().Register(() =>
             {
                 ProjectScope.NestedScopes.Remove(scopeId);
-                childBoundTypes.ForEach(type => ProjectScope.Modules.Remove(scopeId, type));
-                childBoundTypes.Clear();
+                ProjectScope.Modules.RemoveScope(scopeId);
             });
         }
         

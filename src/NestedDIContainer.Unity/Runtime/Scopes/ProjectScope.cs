@@ -10,13 +10,12 @@ namespace NestedDIContainer.Unity.Runtime
     {
         internal static ProjectScope Scope => _scope;
         private static ProjectScope _scope;
-        internal ScopeId ScopeId => _scopeId;
         private ScopeId _scopeId;
 
         internal static ProjectScope CreateProjectScope()
         {
             Dispose();
-            
+
             if (_scope != null)
             {
                 return _scope;
@@ -42,7 +41,7 @@ namespace NestedDIContainer.Unity.Runtime
             }
         }
         private static NestedScopes _nestedScopes;
-        internal static Modules Modules
+        public static Modules Modules
         {
             get
             {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TanitakaTech.NestedDIContainer
 {
@@ -28,6 +29,19 @@ namespace TanitakaTech.NestedDIContainer
             var key = new ModuleRelation(belongingScopeId, type);
             (Value[key] as IDisposable)?.Dispose();
             Value.Remove(key);
+        }
+
+        public void RemoveScope(ScopeId belongingScopeId)
+        {
+            var needRemoveKey = Value.Where(k => k.Key.BelongingScopeId.Equals(belongingScopeId))
+                .Select(k => k.Key)
+                .ToList();
+            needRemoveKey.ForEach(k =>
+            {
+                (Value[k] as IDisposable)?.Dispose();
+                Value.Remove(k);
+            });
+            needRemoveKey.Clear();
         }
         
         public T Resolve<T>(ScopeId callScopeId) => (T) Resolve(typeof(T), callScopeId);
@@ -60,7 +74,7 @@ namespace TanitakaTech.NestedDIContainer
 
     public readonly struct ModuleRelation : IEquatable<ModuleRelation>
     {
-        private ScopeId BelongingScopeId { get; }
+        public ScopeId BelongingScopeId { get; }
         private Type Type { get; }
 
         public ModuleRelation(ScopeId belongingScopeId, Type type)
