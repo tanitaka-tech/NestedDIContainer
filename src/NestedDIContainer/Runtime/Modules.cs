@@ -17,7 +17,7 @@ namespace TanitakaTech.NestedDIContainer
 
         public void Bind(ScopeId belongingScopeId, Type type, object module)
         {
-            var key = new ModuleRelation(belongingScopeId, type);
+            var key = new ModuleRelation(belongingScopeId, type.TypeHandle.Value);
             if (!Value.TryAdd(key, module))
             {
                 throw new ConstructException($"Module already exists: {type}, {belongingScopeId}");
@@ -26,7 +26,7 @@ namespace TanitakaTech.NestedDIContainer
         
         public void Remove(ScopeId belongingScopeId, Type type)
         {
-            var key = new ModuleRelation(belongingScopeId, type);
+            var key = new ModuleRelation(belongingScopeId, type.TypeHandle.Value);
             (Value[key] as IDisposable)?.Dispose();
             Value.Remove(key);
         }
@@ -48,7 +48,7 @@ namespace TanitakaTech.NestedDIContainer
         
         public object Resolve(Type type, ScopeId callScopeId)
         {
-            if (Value.TryGetValue(new ModuleRelation(callScopeId, type), out var module))
+            if (Value.TryGetValue(new ModuleRelation(callScopeId, type.TypeHandle.Value), out var module))
                 return module;
             
             Scopes.TryGetValue(callScopeId, out var callScope);
@@ -58,7 +58,7 @@ namespace TanitakaTech.NestedDIContainer
             {
                 var parentScopeId = parentScopeIdNullable.Value;
                 
-                if (Value.TryGetValue(new ModuleRelation(parentScopeId, type), out var module2))
+                if (Value.TryGetValue(new ModuleRelation(parentScopeId, type.TypeHandle.Value), out var module2))
                     return module2;
 
                 Scopes.TryGetValue(parentScopeId, out var parentScope);
@@ -77,17 +77,17 @@ namespace TanitakaTech.NestedDIContainer
     public readonly struct ModuleRelation : IEquatable<ModuleRelation>
     {
         public ScopeId BelongingScopeId { get; }
-        private Type Type { get; }
+        private IntPtr TypePtr { get; }
 
-        public ModuleRelation(ScopeId belongingScopeId, Type type)
+        public ModuleRelation(ScopeId belongingScopeId, IntPtr typePtr)
         {
             BelongingScopeId = belongingScopeId;
-            Type = type;
+            TypePtr = typePtr;
         }
 
         public bool Equals(ModuleRelation other)
         {
-            return BelongingScopeId.Equals(other.BelongingScopeId) && Type == other.Type;
+            return BelongingScopeId.Equals(other.BelongingScopeId) && TypePtr == other.TypePtr;
         }
 
         public override bool Equals(object obj)
@@ -97,7 +97,7 @@ namespace TanitakaTech.NestedDIContainer
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(BelongingScopeId, Type);
+            return HashCode.Combine(BelongingScopeId, TypePtr);
         }
     }
     
