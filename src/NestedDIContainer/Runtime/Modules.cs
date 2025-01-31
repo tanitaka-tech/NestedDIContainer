@@ -6,7 +6,7 @@ namespace TanitakaTech.NestedDIContainer
 {
     public class Modules
     {
-        private Dictionary<ModuleRelation, object> Value { get; }
+        public Dictionary<ModuleRelation, object> Value { get; }
         private Dictionary<ScopeId, IScope> Scopes { get; }
 
         public Modules(Dictionary<ModuleRelation, object> value, Dictionary<ScopeId, IScope> scopes)
@@ -36,11 +36,11 @@ namespace TanitakaTech.NestedDIContainer
             var needRemoveKey = Value.Where(k => k.Key.BelongingScopeId.Equals(belongingScopeId))
                 .Select(k => k.Key)
                 .ToList();
-            needRemoveKey.ForEach(k =>
+            foreach (var moduleRelation in needRemoveKey)
             {
-                (Value[k] as IDisposable)?.Dispose();
-                Value.Remove(k);
-            });
+                (Value[moduleRelation] as IDisposable)?.Dispose();
+                Value.Remove(moduleRelation);
+            }
             needRemoveKey.Clear();
         }
         
@@ -100,5 +100,4 @@ namespace TanitakaTech.NestedDIContainer
             return HashCode.Combine(BelongingScopeId, TypePtr);
         }
     }
-    
 }

@@ -31,25 +31,6 @@ namespace NestedDIContainer.Unity.Runtime
             _scope.InitializeScope(_scope._scopeId, ScopeId.Create());
             return _scope;
         }
-
-        internal static Dictionary<ScopeId, IScope> Scopes
-        {
-            get
-            {
-                _scopes ??= new Dictionary<ScopeId, IScope>();
-                return _scopes;
-            }
-        }
-        private static Dictionary<ScopeId, IScope> _scopes;
-        public static Modules Modules
-        {
-            get
-            {
-                _modules ??= new Modules(new Dictionary<ModuleRelation, object>(), Scopes);
-                return _modules;
-            }
-        }
-        private static Modules _modules;
         
         internal static object PopConfig()
         {
@@ -77,8 +58,7 @@ namespace NestedDIContainer.Unity.Runtime
 
         private static void Dispose()
         {
-            _scopes = null;
-            _modules = null;
+            GlobalProjectScope.Dispose();
             _scope = null;
             _tempConfig = null;
         }

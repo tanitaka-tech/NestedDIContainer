@@ -43,18 +43,20 @@ namespace NestedDIContainer.Unity.Runtime.Core
         {
             ScopeId = scopeId;
             ParentScopeId = parentScopeId;
-            var childBinder = new DependencyBinder(ProjectScope.Modules, scopeId);
-            
-            _extendScopes.ForEach(extendScope => childBinder.ExtendScope(extendScope));
-            
-            ProjectScope.Scopes.Add(scopeId, this);
+            var childBinder = new DependencyBinder(scopeId);
+            foreach (var extendScope in _extendScopes)
+            {
+                childBinder.ExtendScope(extendScope);
+            }
+
+            GlobalProjectScope.Scopes.Add(scopeId, this);
             Inject(this, parentScopeId);
             ((IScope)this).Construct(childBinder, config);
             ((IScope)this).Initialize();
             this.GetCancellationTokenOnDestroy().Register(() =>
             {
-                ProjectScope.Scopes.Remove(scopeId);
-                ProjectScope.Modules.RemoveScope(scopeId);
+                GlobalProjectScope.Scopes.Remove(scopeId);
+                GlobalProjectScope.Modules.RemoveScope(scopeId);
             });
         }
         
@@ -69,7 +71,7 @@ namespace NestedDIContainer.Unity.Runtime.Core
                 var injectAttr = field.GetCustomAttribute<InjectAttribute>();
                 if (injectAttr != null)
                 {
-                    field.SetValue(scope, ProjectScope.Modules.Resolve(field.FieldType, scopeId));
+                    field.SetValue(scope, GlobalProjectScope.Modules.Resolve(field.FieldType, scopeId));
                 }
             }
             var props = type.GetProperties(MemberBindingFlags);
@@ -78,7 +80,7 @@ namespace NestedDIContainer.Unity.Runtime.Core
                 var injectAttr = prop.GetCustomAttribute<InjectAttribute>();
                 if (injectAttr != null)
                 {
-                    prop.SetValue(scope, ProjectScope.Modules.Resolve(prop.PropertyType, scopeId));
+                    prop.SetValue(scope, GlobalProjectScope.Modules.Resolve(prop.PropertyType, scopeId));
                 }
             }
         }

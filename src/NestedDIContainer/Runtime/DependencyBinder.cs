@@ -1,18 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace TanitakaTech.NestedDIContainer
 {
-    public readonly struct DependencyBinder
+    public readonly ref struct DependencyBinder
     {
         private ScopeId ScopeId { get; }
-        private readonly Modules _bindingModules;
 
-        public DependencyBinder(Modules bindingModules, ScopeId scopeId)
+        public DependencyBinder(ScopeId scopeId)
         {
             ScopeId = scopeId;
-            _bindingModules = bindingModules;
         }
         
         public void ExtendScope(IExtendScope scope)
@@ -28,7 +25,7 @@ namespace TanitakaTech.NestedDIContainer
             var parameterValues = new object[parameters.Length];
             for (int i = 0; i < parameters.Length; i++)
             {
-                parameterValues[i] = _bindingModules.Resolve(parameters[i].ParameterType, ScopeId);
+                parameterValues[i] = GlobalProjectScope.Modules.Resolve(parameters[i].ParameterType, ScopeId);
             }
             var instance = (T)Activator.CreateInstance(type, parameterValues);
             
@@ -45,10 +42,7 @@ namespace TanitakaTech.NestedDIContainer
         
         public void Bind(Type type, object instance)
         {
-            if (_bindingModules == null)
-                throw new ConstructException("Binding failed: no container assigned!");
-
-            _bindingModules.Bind(ScopeId, type, instance);
+            GlobalProjectScope.Modules.Bind(ScopeId, type, instance);
         }
         
         public void Bind<T>(T instance) => Bind(typeof(T), instance);
