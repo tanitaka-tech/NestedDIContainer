@@ -51,8 +51,9 @@ namespace NestedDIContainer.Unity.Runtime.Core
 
             GlobalProjectScope.Scopes.Add(scopeId, this);
             Inject(this, parentScopeId);
-            ((IScope)this).Construct(childBinder, config);
-            ((IScope)this).Initialize();
+            IScope scope = this;
+            scope.Construct(childBinder, config);
+            scope.Initialize();
             this.GetCancellationTokenOnDestroy().Register(() =>
             {
                 GlobalProjectScope.Scopes.Remove(scopeId);

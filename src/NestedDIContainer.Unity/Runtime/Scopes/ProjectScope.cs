@@ -8,7 +8,6 @@ namespace NestedDIContainer.Unity.Runtime
     {
         internal static ProjectScope Scope => _scope;
         private static ProjectScope _scope;
-        private ScopeId _scopeId;
 
         internal static ProjectScope CreateProjectScope()
         {
@@ -25,8 +24,8 @@ namespace NestedDIContainer.Unity.Runtime
                 throw new Exception("ProjectScopeReference was not found. Please check the ProjectSettings.");
             }
             _scope = projectScopeReference.CreateProjectScope();
-            _scope._scopeId = ScopeId.Create();
-            _scope.InitializeScope(_scope._scopeId, ScopeId.Create());
+            _scope.ScopeId = ScopeId.Create();
+            _scope.InitializeScope(_scope.ScopeId, ScopeId.Create());
             return _scope;
         }
         
