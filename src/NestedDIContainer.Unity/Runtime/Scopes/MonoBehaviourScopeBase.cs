@@ -60,9 +60,7 @@ namespace NestedDIContainer.Unity.Runtime.Core
             });
         }
         
-        private void Inject(
-            IScope scope,
-            ScopeId scopeId)
+        private void Inject(IScope scope, ScopeId scopeId)
         {
             var type = scope.GetType();
             var fields = type.GetFields(MemberBindingFlags);

@@ -13,27 +13,24 @@ namespace NestedDIContainer.Unity.Runtime
         protected abstract void Construct(DependencyBinder binder);
     }
     
-    public abstract class SceneScopeWithConfig<TConfig> : MonoBehaviourScopeBase,
-        IScope
+    public abstract class SceneScopeWithConfig<TConfig> : MonoBehaviourScopeBase, IScope
     {
-
-        private ScopeId? _scopeId = null;
-        public static TConfig Config { get; set; } = default;
+        private static TConfig Config { get; set; } = default;
 
         protected void Awake()
         {
             // Init ScopeId
-            _scopeId = ScopeId.Create();
+            ScopeId = ScopeId.Create();
             var parentScope = ProjectScope.Scope ?? ProjectScope.CreateProjectScope();
-            ParentScopeId = _scopeId.Equals(parentScope.ScopeId) ? ScopeId.Create() : parentScope.ScopeId;
+            ParentScopeId = ScopeId.Equals(parentScope.ScopeId) ? ScopeId.Create() : parentScope.ScopeId;
             
-            InitializeScope(_scopeId.Value, ParentScopeId.Value, Config);
+            InitializeScope(ScopeId, ParentScopeId.Value, Config);
             Config = default;
 
             // Inject Children
             List<List<(MonoBehaviourScopeBase scope, ScopeId scopeId, ScopeId parentScopeId)>> childrenGroups = new();
             var beforeChildren = FindComponentsInChildrenOnce<MonoBehaviourScopeBase>(this.gameObject)
-                .Select(child => (scope: child, scopeId: ScopeId.Create(), parentScopeId: _scopeId.Value))
+                .Select(child => (scope: child, scopeId: ScopeId.Create(), parentScopeId: ScopeId))
                 .ToList();
             while (beforeChildren is { Count: > 0 })
             {
@@ -53,13 +50,12 @@ namespace NestedDIContainer.Unity.Runtime
             
             foreach (var childrenGroup in childrenGroups)
             {
-                childrenGroup.ForEach(child =>
+                foreach (var child in childrenGroup)
                 {
                     child.scope.InitializeScope(scopeId: child.scopeId, parentScopeId: child.parentScopeId);
-                });
+                }
             }
         }
-
 
         private List<T> FindComponentsInChildrenOnce<T>(GameObject parent)
         {

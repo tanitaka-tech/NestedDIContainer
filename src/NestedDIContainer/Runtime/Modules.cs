@@ -6,7 +6,7 @@ namespace TanitakaTech.NestedDIContainer
 {
     public class Modules
     {
-        public Dictionary<ModuleRelation, object> Value { get; }
+        private Dictionary<ModuleRelation, object> Value { get; }
         private Dictionary<ScopeId, IScope> Scopes { get; }
 
         public Modules(Dictionary<ModuleRelation, object> value, Dictionary<ScopeId, IScope> scopes)
@@ -64,13 +64,7 @@ namespace TanitakaTech.NestedDIContainer
                 Scopes.TryGetValue(parentScopeId, out var parentScope);
                 parentScopeIdNullable = parentScope?.ParentScopeId;
             }
-            ThrowException(type: type, callScope: callScope);
-            return null;
-            
-            void ThrowException(Type type, IScope callScope)
-            {
-                throw new ConstructException($"Module not found: {type}, {callScope}");
-            }
+            throw new ConstructException($"Module not found: {type}, {callScope}");
         }
     }
 

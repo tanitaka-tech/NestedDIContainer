@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
 using TanitakaTech.NestedDIContainer;
 using UnityEngine;
 
@@ -47,8 +45,10 @@ namespace NestedDIContainer.Unity.Runtime
         protected void Awake()
         {
             _scope = this;
+#if UNITY_EDITOR
             if (gameObject.scene.name != "DontDestroyOnLoad")
                 throw new ConstructException("ProjectScope must not be in a scene");
+#endif
         }
         
         protected void OnDestroy()
