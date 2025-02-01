@@ -39,11 +39,12 @@ namespace NestedDIContainer.Unity.Runtime.Core
             return instance;
         }
         
-        internal void InitializeScope(ScopeId scopeId, ScopeId parentScopeId, object config = null)
+        internal void InitializeScope(ScopeId scopeId, ScopeId parentScopeId, object config = null, IExtendScope optionExtendScope = null)
         {
             ScopeId = scopeId;
             ParentScopeId = parentScopeId;
             var childBinder = new DependencyBinder(scopeId);
+            childBinder.ExtendScope(optionExtendScope);
             foreach (var extendScope in _extendScopes)
             {
                 childBinder.ExtendScope(extendScope);
