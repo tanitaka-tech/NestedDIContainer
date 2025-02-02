@@ -48,17 +48,17 @@ namespace TanitakaTech.NestedDIContainer
         
         public object Resolve(Type type, ScopeId callScopeId)
         {
-            if (Value.TryGetValue(new ModuleRelation(callScopeId, type.TypeHandle.Value), out var module))
+            var typePtr = type.TypeHandle.Value;
+            if (Value.TryGetValue(new ModuleRelation(callScopeId, typePtr), out var module))
                 return module;
             
             Scopes.TryGetValue(callScopeId, out var callScope);
             var parentScopeIdNullable = callScope?.ParentScopeId;
-            
             while (parentScopeIdNullable != null)
             {
                 var parentScopeId = parentScopeIdNullable.Value;
                 
-                if (Value.TryGetValue(new ModuleRelation(parentScopeId, type.TypeHandle.Value), out var module2))
+                if (Value.TryGetValue(new ModuleRelation(parentScopeId, typePtr), out var module2))
                     return module2;
 
                 Scopes.TryGetValue(parentScopeId, out var parentScope);

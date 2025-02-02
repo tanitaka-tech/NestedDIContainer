@@ -55,7 +55,7 @@ namespace NestedDIContainer.Unity.Runtime.Core
             }
 
             GlobalProjectScope.Scopes.Add(scopeId, this);
-            Inject(this, parentScopeId);
+            Inject(this, scopeId);
             IScope scope = this;
             scope.Construct(childBinder, config);
             scope.Initialize();
