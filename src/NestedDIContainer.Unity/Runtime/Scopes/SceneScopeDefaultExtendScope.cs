@@ -5,16 +5,16 @@ namespace src.NestedDIContainer.Unity.Runtime.Scopes
 {
     public class SceneScopeDefaultExtendScope : IExtendScope
     {
-        private ISceneScopeLoader SceneScopeLoader { get; }
+        private IChildSceneScopeLoader ChildSceneScopeLoader { get; }
 
-        public SceneScopeDefaultExtendScope(ISceneScopeLoader sceneScopeLoader)
+        public SceneScopeDefaultExtendScope(IChildSceneScopeLoader childSceneScopeLoader)
         {
-            SceneScopeLoader = sceneScopeLoader;
+            ChildSceneScopeLoader = childSceneScopeLoader;
         }
 
         void IExtendScope.Construct(DependencyBinder binder)
         {
-            binder.Bind<ISceneScopeLoader>(SceneScopeLoader);
+            binder.Bind<IChildSceneScopeLoader>(ChildSceneScopeLoader);
         }
     }
 }

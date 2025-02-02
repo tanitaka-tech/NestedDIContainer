@@ -18,7 +18,7 @@ namespace NestedDIContainer.Unity.Runtime
         protected abstract void Construct(DependencyBinder binder);
     }
     
-    public abstract class SceneScopeWithConfig<TConfig> : MonoBehaviourScopeBase, IScope, ISceneScopeLoader
+    public abstract class SceneScopeWithConfig<TConfig> : MonoBehaviourScopeBase, IScope, IChildSceneScopeLoader
     {
         protected void Awake()
         {

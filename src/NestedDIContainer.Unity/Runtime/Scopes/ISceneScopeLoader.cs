@@ -22,4 +22,6 @@ namespace NestedDIContainer.Unity.Runtime
         UniTask LoadSceneAsync<TConfig>(string sceneName, LoadSceneMode loadSceneMode, CancellationToken cancellationToken, TConfig config = null) where TConfig : class;
         public UniTask LoadSceneAsync<TConfig>(Func<CancellationToken, UniTask> loadSceneFunc, CancellationToken cancellationToken, TConfig config = null) where TConfig : class;
     }
+
+    public interface IChildSceneScopeLoader : ISceneScopeLoader {}
 }

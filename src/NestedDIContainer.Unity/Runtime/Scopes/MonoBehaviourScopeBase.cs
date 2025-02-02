@@ -43,8 +43,12 @@ namespace NestedDIContainer.Unity.Runtime.Core
         {
             ScopeId = scopeId;
             ParentScopeId = parentScopeId;
+
             var childBinder = new DependencyBinder(scopeId);
-            childBinder.ExtendScope(optionExtendScope);
+            if (optionExtendScope != null)
+            {
+                childBinder.ExtendScope(optionExtendScope);
+            }
             foreach (var extendScope in _extendScopes)
             {
                 childBinder.ExtendScope(extendScope);
