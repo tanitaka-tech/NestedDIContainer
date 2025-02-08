@@ -6,7 +6,8 @@ using UnityEngine;
 
 namespace NestedDIContainer.Unity.Runtime.Core
 {
-    public abstract class MonoBehaviourScopeBase : MonoBehaviour, IScope
+    [DefaultExecutionOrder(-5000)]
+    public abstract class MonoBehaviourScopeBase : MonoBehaviour, IScope, IInjectable
     {
         [SerializeField] protected List<ScriptableObjectExtendScope> _extendScopes;
 
@@ -66,7 +67,7 @@ namespace NestedDIContainer.Unity.Runtime.Core
             });
         }
         
-        private void Inject(IScope scope, ScopeId scopeId)
+        protected void Inject(object scope, ScopeId scopeId)
         {
             var type = scope.GetType();
             var fields = type.GetFields(MemberBindingFlags);

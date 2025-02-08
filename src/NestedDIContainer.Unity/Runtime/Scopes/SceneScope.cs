@@ -31,7 +31,10 @@ namespace NestedDIContainer.Unity.Runtime
 
             // Inject Children
             List<List<(MonoBehaviourScopeBase scope, ScopeId scopeId, ScopeId parentScopeId)>> childrenGroups = new();
-            var beforeChildren = FindComponentsInChildrenOnce<MonoBehaviourScopeBase>(this.gameObject)
+
+            var beforeChildren = FindComponentsInChildrenOnce<IInjectable>(this.gameObject)
+                .Select(InjectOrSelect)
+                .Where(child => child != null)
                 .Select(child => (scope: child, scopeId: ScopeId.Create(), parentScopeId: ScopeId))
                 .ToList();
             while (beforeChildren is { Count: > 0 })
@@ -42,6 +45,8 @@ namespace NestedDIContainer.Unity.Runtime
                     {
                         var ret = 
                             FindComponentsInChildrenOnce<MonoBehaviourScopeBase>(child.scope.gameObject)
+                            .Select(InjectOrSelect)
+                            .Where(son => son != null)
                             .Select(son => (scope: son, scopeId: ScopeId.Create(), parentScopeId: child.scopeId))
                             .ToList();
                         return ret;
@@ -55,6 +60,22 @@ namespace NestedDIContainer.Unity.Runtime
                 foreach (var child in childrenGroup)
                 {
                     child.scope.InitializeScope(scopeId: child.scopeId, parentScopeId: child.parentScopeId);
+                }
+            }
+
+            return;
+
+            MonoBehaviourScopeBase InjectOrSelect(IInjectable child)
+            {
+                if (child is MonoBehaviourScopeBase monoBehaviourScope)
+                {
+                    return monoBehaviourScope;
+                }
+                else
+                {
+                    // Inject to IInjectable
+                    Inject(scope: child, scopeId: ScopeId.Create());
+                    return null;
                 }
             }
         }
