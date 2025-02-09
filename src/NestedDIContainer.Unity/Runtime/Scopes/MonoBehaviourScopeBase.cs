@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Cysharp.Threading.Tasks;
 using TanitakaTech.NestedDIContainer;
@@ -60,23 +61,51 @@ namespace NestedDIContainer.Unity.Runtime.Core
             IScope scope = this;
             scope.Construct(childBinder, config);
             scope.Initialize();
+
             this.GetCancellationTokenOnDestroy().Register(() =>
             {
                 GlobalProjectScope.Scopes.Remove(scopeId);
                 GlobalProjectScope.Modules.RemoveScope(scopeId);
             });
+
+            // Inject Children
+            var scopeChildren = FindComponentsInChildrenOnce<IInjectable>(this.gameObject)
+                .Select(InjectOrSelect)
+                .Where(child => child != null)
+                .Select(child => (scope: child, scopeId: ScopeId.Create(), parentScopeId: ScopeId))
+                .ToList();
+            foreach (var scopeChild in scopeChildren)
+            {
+                scopeChild.scope.InitializeScope(scopeId: scopeChild.scopeId, parentScopeId: scopeChild.parentScopeId);
+            }
+
+            return;
+
+            MonoBehaviourScopeBase InjectOrSelect(IInjectable child)
+            {
+                if (child is MonoBehaviourScopeBase monoBehaviourScope)
+                {
+                    return monoBehaviourScope;
+                }
+                else
+                {
+                    // Inject to IInjectable
+                    Inject(injectableObject: child, scopeId: ScopeId.Create());
+                    return null;
+                }
+            }
         }
         
-        protected void Inject(object scope, ScopeId scopeId)
+        private void Inject(object injectableObject, ScopeId scopeId)
         {
-            var type = scope.GetType();
+            var type = injectableObject.GetType();
             var fields = type.GetFields(MemberBindingFlags);
             foreach (var field in fields)
             {
                 var injectAttr = field.GetCustomAttribute<InjectAttribute>();
                 if (injectAttr != null)
                 {
-                    field.SetValue(scope, GlobalProjectScope.Modules.Resolve(field.FieldType, scopeId));
+                    field.SetValue(injectableObject, GlobalProjectScope.Modules.Resolve(field.FieldType, scopeId));
                 }
             }
             var props = type.GetProperties(MemberBindingFlags);
@@ -85,7 +114,33 @@ namespace NestedDIContainer.Unity.Runtime.Core
                 var injectAttr = prop.GetCustomAttribute<InjectAttribute>();
                 if (injectAttr != null)
                 {
-                    prop.SetValue(scope, GlobalProjectScope.Modules.Resolve(prop.PropertyType, scopeId));
+                    prop.SetValue(injectableObject, GlobalProjectScope.Modules.Resolve(prop.PropertyType, scopeId));
+                }
+            }
+        }
+
+        private List<T> FindComponentsInChildrenOnce<T>(GameObject parent)
+        {
+            List<T> foundComponents = new List<T>();
+            foreach (Transform child in parent.transform)
+            {
+                FindComponentsRecursive(child, foundComponents);
+            }
+            return foundComponents;
+
+            void FindComponentsRecursive<T>(Transform current, List<T> foundComponents)
+            {
+                T component = current.GetComponent<T>();
+
+                if (component != null)
+                {
+                    foundComponents.Add(component);
+                    return;
+                }
+
+                foreach (Transform child in current)
+                {
+                    FindComponentsRecursive(child, foundComponents);
                 }
             }
         }
