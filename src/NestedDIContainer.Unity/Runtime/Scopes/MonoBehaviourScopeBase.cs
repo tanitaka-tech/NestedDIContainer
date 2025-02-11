@@ -4,6 +4,7 @@ using System.Reflection;
 using Cysharp.Threading.Tasks;
 using TanitakaTech.NestedDIContainer;
 using UnityEngine;
+using IInjectable = TanitakaTech.NestedDIContainer.IInjectable;
 
 namespace NestedDIContainer.Unity.Runtime.Core
 {
@@ -68,32 +69,7 @@ namespace NestedDIContainer.Unity.Runtime.Core
                 GlobalProjectScope.Modules.RemoveScope(scopeId);
             });
 
-            // Inject Children
-            var scopeChildren = FindComponentsInChildrenOnce<IInjectable>(this.gameObject)
-                .Select(InjectOrSelect)
-                .Where(child => child != null)
-                .Select(child => (scope: child, scopeId: ScopeId.Create(), parentScopeId: ScopeId))
-                .ToList();
-            foreach (var scopeChild in scopeChildren)
-            {
-                scopeChild.scope.InitializeScope(scopeId: scopeChild.scopeId, parentScopeId: scopeChild.parentScopeId);
-            }
-
-            return;
-
-            MonoBehaviourScopeBase InjectOrSelect(IInjectable child)
-            {
-                if (child is MonoBehaviourScopeBase monoBehaviourScope)
-                {
-                    return monoBehaviourScope;
-                }
-                else
-                {
-                    // Inject to IInjectable
-                    Inject(injectableObject: child, scopeId: ScopeId.Create());
-                    return null;
-                }
-            }
+            InjectOrInitializeChildren(this.gameObject);
         }
         
         private void Inject(object injectableObject, ScopeId scopeId)
@@ -119,28 +95,34 @@ namespace NestedDIContainer.Unity.Runtime.Core
             }
         }
 
-        private List<T> FindComponentsInChildrenOnce<T>(GameObject parent)
+        private void InjectOrInitializeChildren(GameObject parent)
         {
-            List<T> foundComponents = new List<T>();
             foreach (Transform child in parent.transform)
             {
-                FindComponentsRecursive(child, foundComponents);
+                InjectOrInitializeChildrenRecursive(child);
             }
-            return foundComponents;
+            return;
 
-            void FindComponentsRecursive<T>(Transform current, List<T> foundComponents)
+            void InjectOrInitializeChildrenRecursive(Transform current)
             {
-                T component = current.GetComponent<T>();
-
-                if (component != null)
+                var injectable = current.GetComponent<IInjectable>();
+                if (injectable != null)
                 {
-                    foundComponents.Add(component);
+                    var scopeId = ScopeId.Create();
+                    if (injectable is MonoBehaviourScopeBase monoBehaviourScope)
+                    {
+                        monoBehaviourScope.InitializeScope(scopeId: scopeId, parentScopeId: ScopeId);
+                    }
+                    else
+                    {
+                        Inject(injectableObject: injectable, scopeId: scopeId);
+                    }
                     return;
                 }
 
                 foreach (Transform child in current)
                 {
-                    FindComponentsRecursive(child, foundComponents);
+                    InjectOrInitializeChildrenRecursive(child);
                 }
             }
         }
