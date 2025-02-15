@@ -112,13 +112,17 @@ namespace NestedDIContainer.Unity.Runtime.Core
                     if (injectable is MonoBehaviourScopeBase monoBehaviourScope)
                     {
                         monoBehaviourScope.InitializeScope(scopeId: scopeId, parentScopeId: ScopeId);
+                        return;
                     }
                     else
                     {
                         GlobalProjectScope.Scopes.Add(scopeId, this);
                         Inject(injectableObject: injectable, scopeId: scopeId);
+                        this.GetCancellationTokenOnDestroy().Register(() =>
+                        {
+                            GlobalProjectScope.Scopes.Remove(scopeId);
+                        });
                     }
-                    return;
                 }
 
                 foreach (Transform child in current)
