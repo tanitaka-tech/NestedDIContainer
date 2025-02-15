@@ -43,28 +43,36 @@ namespace TanitakaTech.NestedDIContainer
             }
             needRemoveKey.Clear();
         }
-        
-        public T Resolve<T>(ScopeId callScopeId) => (T) Resolve(typeof(T), callScopeId);
-        
-        public object Resolve(Type type, ScopeId callScopeId)
+
+        public T Resolve<T>(IScope callScope)
+        {
+            return (T)Resolve(typeof(T), callScope);
+        }
+
+        public T Resolve<T>(ScopeId callScopeId)
+        {
+            Scopes.TryGetValue(callScopeId, out var callScope);
+            return Resolve<T>(callScope);
+        }
+
+        public object Resolve(Type type, IScope callScope)
         {
             var typePtr = type.TypeHandle.Value;
-            if (Value.TryGetValue(new ModuleRelation(callScopeId, typePtr), out var module))
+            if (Value.TryGetValue(new ModuleRelation(callScope.ScopeId, typePtr), out var module))
                 return module;
-            
-            Scopes.TryGetValue(callScopeId, out var callScope);
+
             var parentScopeIdNullable = callScope?.ParentScopeId;
             while (parentScopeIdNullable != null)
             {
                 var parentScopeId = parentScopeIdNullable.Value;
-                
+
                 if (Value.TryGetValue(new ModuleRelation(parentScopeId, typePtr), out var module2))
                     return module2;
 
                 Scopes.TryGetValue(parentScopeId, out var parentScope);
                 parentScopeIdNullable = parentScope?.ParentScopeId;
             }
-            throw new ConstructException($"Module not found: {type}, {callScope}");
+            throw new ConstructException($"Module not found: {type}, {callScope?.ScopeId}");
         }
     }
 

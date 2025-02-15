@@ -58,7 +58,7 @@ namespace NestedDIContainer.Unity.Runtime.Core
             }
 
             GlobalProjectScope.Scopes.Add(scopeId, this);
-            Inject(this, scopeId);
+            Inject(this, this);
             IScope scope = this;
             scope.Construct(childBinder, config);
             scope.Initialize();
@@ -71,8 +71,8 @@ namespace NestedDIContainer.Unity.Runtime.Core
 
             InjectOrInitializeChildren(this.gameObject);
         }
-        
-        private void Inject(object injectableObject, ScopeId scopeId)
+
+        private void Inject(object injectableObject, IScope scope)
         {
             var type = injectableObject.GetType();
             var fields = type.GetFields(MemberBindingFlags);
@@ -81,7 +81,7 @@ namespace NestedDIContainer.Unity.Runtime.Core
                 var injectAttr = field.GetCustomAttribute<InjectAttribute>();
                 if (injectAttr != null)
                 {
-                    field.SetValue(injectableObject, GlobalProjectScope.Modules.Resolve(field.FieldType, scopeId));
+                    field.SetValue(injectableObject, GlobalProjectScope.Modules.Resolve(field.FieldType, scope));
                 }
             }
             var props = type.GetProperties(MemberBindingFlags);
@@ -90,7 +90,7 @@ namespace NestedDIContainer.Unity.Runtime.Core
                 var injectAttr = prop.GetCustomAttribute<InjectAttribute>();
                 if (injectAttr != null)
                 {
-                    prop.SetValue(injectableObject, GlobalProjectScope.Modules.Resolve(prop.PropertyType, scopeId));
+                    prop.SetValue(injectableObject, GlobalProjectScope.Modules.Resolve(prop.PropertyType, scope));
                 }
             }
         }
@@ -116,12 +116,7 @@ namespace NestedDIContainer.Unity.Runtime.Core
                     }
                     else
                     {
-                        GlobalProjectScope.Scopes.Add(scopeId, this);
-                        Inject(injectableObject: injectable, scopeId: scopeId);
-                        this.GetCancellationTokenOnDestroy().Register(() =>
-                        {
-                            GlobalProjectScope.Scopes.Remove(scopeId);
-                        });
+                        Inject(injectableObject: injectable, scope: this);
                     }
                 }
 
