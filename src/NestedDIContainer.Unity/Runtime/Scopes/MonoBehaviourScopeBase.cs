@@ -115,6 +115,7 @@ namespace NestedDIContainer.Unity.Runtime.Core
                     }
                     else
                     {
+                        GlobalProjectScope.Scopes.Add(scopeId, this);
                         Inject(injectableObject: injectable, scopeId: scopeId);
                     }
                     return;
