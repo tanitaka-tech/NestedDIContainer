@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using TanitakaTech.NestedDIContainer;
 using UnityEngine;
 
@@ -8,6 +9,8 @@ namespace NestedDIContainer.Unity.Runtime
     {
         internal static ProjectScope Scope => _scope;
         private static ProjectScope _scope;
+
+        internal static List<IAsyncInitializer> Initializers { get; } = new ();
 
         internal static ProjectScope CreateProjectScope()
         {

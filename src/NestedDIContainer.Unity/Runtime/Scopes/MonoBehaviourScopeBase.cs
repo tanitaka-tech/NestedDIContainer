@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks.Triggers;
 using TanitakaTech.NestedDIContainer;
 using UnityEngine;
 using IInjectable = TanitakaTech.NestedDIContainer.IInjectable;
@@ -61,9 +62,39 @@ namespace NestedDIContainer.Unity.Runtime.Core
             Inject(this, this);
             IScope scope = this;
             scope.Construct(childBinder, config);
-            scope.Initialize();
 
-            this.GetCancellationTokenOnDestroy().Register(() =>
+            var cancellationTokenOnDestroy = this.GetCancellationTokenOnDestroy();
+            scope.Initialize();
+            if (this is IAsyncInitializer asyncInitializer)
+            {
+                var parentScope = scope;
+                IAsyncInitializer parentAsyncInitializer = null;
+                ProjectScope.Initializers.Add(asyncInitializer);
+
+                while (!parentScope.ParentScopeId.Equals(ProjectScope.Scope.ParentScopeId))
+                {
+                    GlobalProjectScope.Scopes.TryGetValue(parentScope.ParentScopeId.Value, out parentScope);
+                    if (parentScope is IAsyncInitializer parent)
+                    {
+                        parentAsyncInitializer = parent;
+                        break;
+                    }
+                }
+
+                this.StartAsync()
+                    .ContinueWith(async () =>
+                    {
+                        if (parentAsyncInitializer != null)
+                        {
+                            await UniTask.WaitWhile(() => ProjectScope.Initializers.Any(x => x == parentAsyncInitializer), cancellationToken: cancellationTokenOnDestroy);
+                        }
+                        await asyncInitializer.InitializeAsync(cancellationTokenOnDestroy);
+                        ProjectScope.Initializers.Remove(asyncInitializer);
+                    })
+                    .Forget();
+            }
+
+            cancellationTokenOnDestroy.Register(() =>
             {
                 GlobalProjectScope.Scopes.Remove(scopeId);
                 GlobalProjectScope.Modules.RemoveScope(scopeId);
