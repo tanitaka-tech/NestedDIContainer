@@ -30,37 +30,10 @@ namespace NestedDIContainer.Unity.Runtime
             InitializeScope(ScopeId, ParentScopeId.Value, ProjectScope.PopConfig(), new SceneScopeDefaultExtendScope(this));
         }
 
-        private List<T> FindComponentsInChildrenOnce<T>(GameObject parent)
-        {
-            List<T> foundComponents = new List<T>();
-            foreach (Transform child in parent.transform)
-            {
-                FindComponentsRecursive(child, foundComponents);
-            }
-            return foundComponents;
-
-            void FindComponentsRecursive<T>(Transform current, List<T> foundComponents)
-            {
-                T component = current.GetComponent<T>();
-
-                if (component != null)
-                {
-                    foundComponents.Add(component);
-                    return;
-                }
-
-                foreach (Transform child in current)
-                {
-                    FindComponentsRecursive(child, foundComponents);
-                }
-            }
-        }
-
         protected override void Construct(DependencyBinder binder, object config) => Construct(binder, (TConfig)config);
         protected abstract void Construct(DependencyBinder binder, TConfig config);
         void IScope.Initialize() => Initialize();
         protected virtual void Initialize() {}
-
 
         // ISceneLoader implementation -----
         void ISceneScopeLoader.LoadScene<TConfig>(Action loadSceneAction, TConfig config = null) where TConfig : class
