@@ -27,13 +27,11 @@ namespace NestedDIContainer.Unity.Runtime
             var parentScope = ProjectScope.Scope ?? ProjectScope.CreateProjectScope();
             ParentScopeId = ScopeId.Equals(parentScope.ScopeId) ? ScopeId.Create() : parentScope.ScopeId;
 
-            InitializeScope(ScopeId, ParentScopeId.Value, ProjectScope.PopConfig(), new SceneScopeDefaultExtendScope(this));
+            ConstructScope(ScopeId, ParentScopeId.Value, ProjectScope.PopConfig(), new SceneScopeDefaultExtendScope(this));
         }
 
         protected override void Construct(DependencyBinder binder, object config) => Construct(binder, (TConfig)config);
         protected abstract void Construct(DependencyBinder binder, TConfig config);
-        void IScope.Initialize() => Initialize();
-        protected virtual void Initialize() {}
 
         // ISceneLoader implementation -----
         void ISceneScopeLoader.LoadScene<TConfig>(Action loadSceneAction, TConfig config = null) where TConfig : class

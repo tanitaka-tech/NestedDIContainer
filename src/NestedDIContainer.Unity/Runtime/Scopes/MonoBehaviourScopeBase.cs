@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks.Triggers;
 using TanitakaTech.NestedDIContainer;
 using UnityEngine;
 using IInjectable = TanitakaTech.NestedDIContainer.IInjectable;
@@ -24,13 +25,11 @@ namespace NestedDIContainer.Unity.Runtime.Core
             Construct(binder, config);
         }
         protected abstract void Construct(DependencyBinder binder, object config);
-        void IScope.Initialize() => Initialize();
-        protected virtual void Initialize() {}
 
         public T Instantiate<T>(T prefab, Transform parent, object config = null) where T : MonoBehaviourScopeBase
         {
             var instance = UnityEngine.Object.Instantiate(prefab, parent);
-            instance.InitializeScope(ScopeId.Create(), ScopeId, config);
+            instance.ConstructScope(ScopeId.Create(), ScopeId, config);
             return instance;
         }
         
@@ -38,11 +37,11 @@ namespace NestedDIContainer.Unity.Runtime.Core
             where TConfig : class
         {
             var instance = UnityEngine.Object.Instantiate(prefab, parent);
-            instance.InitializeScope(ScopeId.Create(), ScopeId, config);
+            instance.ConstructScope(ScopeId.Create(), ScopeId, config);
             return instance;
         }
         
-        internal void InitializeScope(ScopeId scopeId, ScopeId parentScopeId, object config = null, IExtendScope optionExtendScope = null)
+        internal void ConstructScope(ScopeId scopeId, ScopeId parentScopeId, object config = null, IExtendScope optionExtendScope = null)
         {
             ScopeId = scopeId;
             ParentScopeId = parentScopeId;
@@ -61,9 +60,38 @@ namespace NestedDIContainer.Unity.Runtime.Core
             Inject(this, this);
             IScope scope = this;
             scope.Construct(childBinder, config);
-            scope.Initialize();
 
-            this.GetCancellationTokenOnDestroy().Register(() =>
+            var cancellationTokenOnDestroy = this.GetCancellationTokenOnDestroy();
+            if (this is IAsyncInitializer asyncInitializer)
+            {
+                var parentScope = scope;
+                IAsyncInitializer parentAsyncInitializer = null;
+                ProjectScope.Initializers.Add(asyncInitializer);
+
+                while (!parentScope.ParentScopeId.Equals(ProjectScope.Scope.ParentScopeId))
+                {
+                    GlobalProjectScope.Scopes.TryGetValue(parentScope.ParentScopeId.Value, out parentScope);
+                    if (parentScope is IAsyncInitializer parent)
+                    {
+                        parentAsyncInitializer = parent;
+                        break;
+                    }
+                }
+
+                this.StartAsync()
+                    .ContinueWith(async () =>
+                    {
+                        if (parentAsyncInitializer != null)
+                        {
+                            await UniTask.WaitWhile(() => ProjectScope.Initializers.Any(x => x == parentAsyncInitializer), cancellationToken: cancellationTokenOnDestroy);
+                        }
+                        await asyncInitializer.InitializeAsync(cancellationTokenOnDestroy);
+                        ProjectScope.Initializers.Remove(asyncInitializer);
+                    })
+                    .Forget();
+            }
+
+            cancellationTokenOnDestroy.Register(() =>
             {
                 GlobalProjectScope.Scopes.Remove(scopeId);
                 GlobalProjectScope.Modules.RemoveScope(scopeId);
@@ -111,7 +139,7 @@ namespace NestedDIContainer.Unity.Runtime.Core
                     var scopeId = ScopeId.Create();
                     if (injectable is MonoBehaviourScopeBase monoBehaviourScope)
                     {
-                        monoBehaviourScope.InitializeScope(scopeId: scopeId, parentScopeId: ScopeId);
+                        monoBehaviourScope.ConstructScope(scopeId: scopeId, parentScopeId: ScopeId);
                         return;
                     }
                     else

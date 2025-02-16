@@ -22,7 +22,5 @@
             Construct(binder, (TConfig)config);
         }
         protected abstract void Construct(DependencyBinder dependencyBinder, TConfig config);
-        void IScope.Initialize() => Initialize();
-        protected virtual void Initialize() {}
     }
 }
