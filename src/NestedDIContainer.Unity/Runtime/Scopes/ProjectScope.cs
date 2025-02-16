@@ -28,7 +28,7 @@ namespace NestedDIContainer.Unity.Runtime
             }
             _scope = projectScopeReference.CreateProjectScope();
             _scope.ScopeId = ScopeId.Create();
-            _scope.InitializeScope(_scope.ScopeId, ScopeId.Create());
+            _scope.ConstructScope(_scope.ScopeId, ScopeId.Create());
             return _scope;
         }
         
