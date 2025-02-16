@@ -23,9 +23,10 @@ namespace TanitakaTech.NestedDIContainer
             var constructor = type.GetConstructors().First();
             var parameters = constructor.GetParameters();
             var parameterValues = new object[parameters.Length];
+            GlobalProjectScope.Scopes.TryGetValue(ScopeId, out var scope);
             for (int i = 0; i < parameters.Length; i++)
             {
-                parameterValues[i] = GlobalProjectScope.Modules.Resolve(parameters[i].ParameterType, ScopeId);
+                parameterValues[i] = GlobalProjectScope.Modules.Resolve(parameters[i].ParameterType, scope);
             }
             var instance = (T)Activator.CreateInstance(type, parameterValues);
             
