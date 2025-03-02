@@ -1,6 +1,6 @@
 ﻿namespace TanitakaTech.NestedDIContainer
 {
-    public interface IExtendScope
+    public interface IExtendScope : IInjectable
     {
         void Construct(DependencyBinder binder);
     }

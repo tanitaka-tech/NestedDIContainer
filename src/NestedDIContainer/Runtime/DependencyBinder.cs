@@ -12,8 +12,9 @@ namespace TanitakaTech.NestedDIContainer
             ScopeId = scopeId;
         }
         
-        public void ExtendScope(IExtendScope scope)
+        public void ExtendScope(IExtendScope scope, IInjector injector)
         {
+            injector.Inject(scope, GlobalProjectScope.Scopes[ScopeId]);
             scope.Construct(this);
         }
         
@@ -29,9 +30,9 @@ namespace TanitakaTech.NestedDIContainer
                 parameterValues[i] = GlobalProjectScope.Modules.Resolve(parameters[i].ParameterType, scope);
             }
             var instance = (T)Activator.CreateInstance(type, parameterValues);
-            
-            ExtendScope(instance);
-            
+
+            instance.Construct(this);
+
             return instance;
         }
         
