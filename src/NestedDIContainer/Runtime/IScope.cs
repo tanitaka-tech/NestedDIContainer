@@ -1,6 +1,6 @@
 ﻿namespace TanitakaTech.NestedDIContainer
 {
-    public interface IScope : IInjector, IInjectable
+    public interface IScope : IInjectable
     {
         void Construct(DependencyBinder binder, object config);
         ScopeId ScopeId { get; set; }

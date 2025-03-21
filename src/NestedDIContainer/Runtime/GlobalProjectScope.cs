@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Reflection;
+using NestedDIContainer.Unity.Runtime;
 
 namespace TanitakaTech.NestedDIContainer
 {
@@ -23,6 +25,32 @@ namespace TanitakaTech.NestedDIContainer
             }
         }
         private static Modules _modules;
+
+        private const BindingFlags MemberBindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+
+        public static void Inject(object injectableObject, IScope scope)
+        {
+            var type = injectableObject.GetType();
+            var fields = type.GetFields(MemberBindingFlags);
+            foreach (var field in fields)
+            {
+                var injectAttr = field.GetCustomAttribute<InjectAttribute>();
+                if (injectAttr != null)
+                {
+                    field.SetValue(injectableObject, Modules.Resolve(field.FieldType, scope));
+                }
+            }
+
+            var props = type.GetProperties(MemberBindingFlags);
+            foreach (var prop in props)
+            {
+                var injectAttr = prop.GetCustomAttribute<InjectAttribute>();
+                if (injectAttr != null)
+                {
+                    prop.SetValue(scope, Modules.Resolve(prop.PropertyType, scope));
+                }
+            }
+        }
 
         public static void Dispose()
         {
