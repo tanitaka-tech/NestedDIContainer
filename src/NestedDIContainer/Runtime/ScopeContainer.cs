@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
+using NestedDIContainer.Unity.Runtime;
 
 namespace TanitakaTech.NestedDIContainer
 {
     public class ScopeContainer
     {
-        private readonly Dictionary<IntPtr, object> _value;
+        private readonly Dictionary<IntPtr, object> _value = new Dictionary<IntPtr, object>();
         private readonly ScopeId _scopeId;
         private readonly ScopeContainer _parentScopeContainer;
 
-        public ScopeContainer(Dictionary<IntPtr, object> value, ScopeId scopeId, ScopeContainer parentScopeContainer)
+        public ScopeContainer(ScopeId scopeId, ScopeContainer parentScopeContainer)
         {
-            _value = value;
             _scopeId = scopeId;
             _parentScopeContainer = parentScopeContainer;
         }
-
+        
         public void Bind(Type type, object module)
         {
             var key = type.TypeHandle.Value;
@@ -53,6 +54,31 @@ namespace TanitakaTech.NestedDIContainer
                 return _parentScopeContainer.Resolve(type);
             }
             throw new ConstructException($"Module not found: {type}");
+        }
+
+        private const BindingFlags MemberBindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+        public void Inject(object injectableObject, IScope scope)
+        {
+            var type = injectableObject.GetType();
+            var fields = type.GetFields(MemberBindingFlags);
+            foreach (var field in fields)
+            {
+                var injectAttr = field.GetCustomAttribute<InjectAttribute>();
+                if (injectAttr != null)
+                {
+                    field.SetValue(injectableObject, Resolve(field.FieldType));
+                }
+            }
+
+            var props = type.GetProperties(MemberBindingFlags);
+            foreach (var prop in props)
+            {
+                var injectAttr = prop.GetCustomAttribute<InjectAttribute>();
+                if (injectAttr != null)
+                {
+                    prop.SetValue(scope, Resolve(prop.PropertyType));
+                }
+            }
         }
     }
 }

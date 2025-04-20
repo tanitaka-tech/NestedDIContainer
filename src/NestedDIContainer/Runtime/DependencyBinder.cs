@@ -19,7 +19,7 @@ namespace TanitakaTech.NestedDIContainer
 
         public void ExtendScope(IExtendScope scope)
         {
-            GlobalProjectScope.Inject(scope, GlobalProjectScope.Scopes[_scopeId]);
+            _scopeContainer.Inject(scope, GlobalProjectScope.Scopes[_scopeId]);
             scope.Construct(this);
         }
         
