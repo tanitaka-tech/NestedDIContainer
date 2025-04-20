@@ -1,25 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace TanitakaTech.NestedDIContainer
 {
     public readonly ref struct DependencyBinder
     {
-        private readonly ScopeId _scopeId;
-        private readonly Dictionary<ScopeId, IScope> _scopes;
         private readonly ScopeContainer _scopeContainer;
 
-        public DependencyBinder(ScopeId scopeId, Dictionary<ScopeId, IScope> scopes, ScopeContainer scopeContainer)
+        public DependencyBinder(ScopeContainer scopeContainer)
         {
-            _scopeId = scopeId;
-            _scopes = scopes;
             _scopeContainer = scopeContainer;
         }
 
         public void ExtendScope(IExtendScope scope)
         {
-            _scopeContainer.Inject(scope, GlobalProjectScope.Scopes[_scopeId]);
+            _scopeContainer.Inject(scope);
             scope.Construct(this);
         }
         

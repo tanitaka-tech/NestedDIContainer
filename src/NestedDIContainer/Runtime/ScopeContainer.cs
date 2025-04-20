@@ -8,23 +8,23 @@ namespace TanitakaTech.NestedDIContainer
     public class ScopeContainer
     {
         private readonly Dictionary<IntPtr, object> _value = new Dictionary<IntPtr, object>();
-        private readonly ScopeId _scopeId;
+        private readonly IScope _scope;
         private readonly ScopeContainer _parentScopeContainer;
-        public ScopeId ScopeId => _scopeId;
-        public ScopeId? ParentScopeId => _parentScopeContainer?.ScopeId;
+        public IScope Scope => _scope;
+        public IScope ParentScope => _parentScopeContainer?.Scope;
 
-        public ScopeContainer(ScopeId scopeId, ScopeContainer parentScopeContainer)
+        public ScopeContainer(IScope scope, ScopeContainer parentScopeContainer)
         {
-            _scopeId = scopeId;
+            _scope = scope;
             _parentScopeContainer = parentScopeContainer;
         }
-        
+
         public void Bind(Type type, object module)
         {
             var key = type.TypeHandle.Value;
             if (!_value.TryAdd(key, module))
             {
-                throw new ConstructException($"Module already exists: {type}, {_scopeId}");
+                throw new ConstructException($"Module already exists: {type}, {_scope}");
             }
         }
         
@@ -59,7 +59,7 @@ namespace TanitakaTech.NestedDIContainer
         }
 
         private const BindingFlags MemberBindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly;
-        public void Inject(object injectableObject, IScope scope)
+        public void Inject(object injectableObject)
         {
             var type = injectableObject.GetType();
             var fields = type.GetFields(MemberBindingFlags);
@@ -78,7 +78,7 @@ namespace TanitakaTech.NestedDIContainer
                 var injectAttr = prop.GetCustomAttribute<InjectAttribute>();
                 if (injectAttr != null)
                 {
-                    prop.SetValue(scope, Resolve(prop.PropertyType));
+                    prop.SetValue(Scope, Resolve(prop.PropertyType));
                 }
             }
         }
