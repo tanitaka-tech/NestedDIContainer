@@ -17,15 +17,15 @@ namespace TanitakaTech.NestedDIContainer
         }
         private static Dictionary<ScopeId, IScope> _scopes;
 
-        public static Modules Modules
+        public static ScopeContainer ScopeContainer
         {
             get
             {
-                _modules ??= new Modules(new Dictionary<(ScopeId, IntPtr), object>(), Scopes);
-                return _modules;
+                _scopeContainer ??= new ScopeContainer(new Dictionary<IntPtr, object>(), ScopeId.Create(), null);
+                return _scopeContainer;
             }
         }
-        private static Modules _modules;
+        private static ScopeContainer _scopeContainer;
 
         private const BindingFlags MemberBindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly;
 
@@ -38,7 +38,7 @@ namespace TanitakaTech.NestedDIContainer
                 var injectAttr = field.GetCustomAttribute<InjectAttribute>();
                 if (injectAttr != null)
                 {
-                    field.SetValue(injectableObject, Modules.Resolve(field.FieldType, scope));
+                    field.SetValue(injectableObject, ScopeContainer.Resolve(field.FieldType));
                 }
             }
 
@@ -48,7 +48,7 @@ namespace TanitakaTech.NestedDIContainer
                 var injectAttr = prop.GetCustomAttribute<InjectAttribute>();
                 if (injectAttr != null)
                 {
-                    prop.SetValue(scope, Modules.Resolve(prop.PropertyType, scope));
+                    prop.SetValue(scope, ScopeContainer.Resolve(prop.PropertyType));
                 }
             }
         }
@@ -56,7 +56,7 @@ namespace TanitakaTech.NestedDIContainer
         public static void Dispose()
         {
             _scopes = null;
-            _modules = null;
+            _scopeContainer = null;
         }
     }
 }
