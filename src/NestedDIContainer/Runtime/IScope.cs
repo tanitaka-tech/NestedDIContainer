@@ -3,7 +3,7 @@
     public interface IScope : IInjectable
     {
         void Construct(DependencyBinder binder, object config);
-        ScopeId ScopeId { get; set; }
-        ScopeId? ParentScopeId { get; set; }
+        ScopeId? ParentScopeId { get; }
+        ScopeContainer ScopeContainer { get; }
     }
 }

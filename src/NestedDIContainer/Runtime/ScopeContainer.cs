@@ -10,6 +10,8 @@ namespace TanitakaTech.NestedDIContainer
         private readonly Dictionary<IntPtr, object> _value = new Dictionary<IntPtr, object>();
         private readonly ScopeId _scopeId;
         private readonly ScopeContainer _parentScopeContainer;
+        public ScopeId ScopeId => _scopeId;
+        public ScopeId? ParentScopeId => _parentScopeContainer?.ScopeId;
 
         public ScopeContainer(ScopeId scopeId, ScopeContainer parentScopeContainer)
         {
