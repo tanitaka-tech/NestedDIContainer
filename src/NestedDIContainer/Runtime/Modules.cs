@@ -6,10 +6,10 @@ namespace TanitakaTech.NestedDIContainer
 {
     public class Modules
     {
-        private Dictionary<ModuleRelation, object> Value { get; }
+        private Dictionary<(ScopeId BelongingScopeId, IntPtr TypePtr), object> Value { get; }
         private Dictionary<ScopeId, IScope> Scopes { get; }
 
-        public Modules(Dictionary<ModuleRelation, object> value, Dictionary<ScopeId, IScope> scopes)
+        public Modules(Dictionary<(ScopeId, IntPtr), object> value, Dictionary<ScopeId, IScope> scopes)
         {
             Value = value;
             Scopes = scopes;
@@ -17,7 +17,7 @@ namespace TanitakaTech.NestedDIContainer
 
         public void Bind(ScopeId belongingScopeId, Type type, object module)
         {
-            var key = new ModuleRelation(belongingScopeId, type.TypeHandle.Value);
+            var key = (belongingScopeId, type.TypeHandle.Value);
             if (!Value.TryAdd(key, module))
             {
                 throw new ConstructException($"Module already exists: {type}, {belongingScopeId}");
@@ -26,7 +26,7 @@ namespace TanitakaTech.NestedDIContainer
         
         public void Remove(ScopeId belongingScopeId, Type type)
         {
-            var key = new ModuleRelation(belongingScopeId, type.TypeHandle.Value);
+            var key = (belongingScopeId, type.TypeHandle.Value);
             (Value[key] as IDisposable)?.Dispose();
             Value.Remove(key);
         }
@@ -58,7 +58,7 @@ namespace TanitakaTech.NestedDIContainer
         public object Resolve(Type type, IScope callScope)
         {
             var typePtr = type.TypeHandle.Value;
-            if (Value.TryGetValue(new ModuleRelation(callScope.ScopeId, typePtr), out var module))
+            if (Value.TryGetValue((callScope.ScopeId, typePtr), out var module))
                 return module;
 
             var parentScopeIdNullable = callScope?.ParentScopeId;
@@ -66,40 +66,13 @@ namespace TanitakaTech.NestedDIContainer
             {
                 var parentScopeId = parentScopeIdNullable.Value;
 
-                if (Value.TryGetValue(new ModuleRelation(parentScopeId, typePtr), out var module2))
+                if (Value.TryGetValue((parentScopeId, typePtr), out var module2))
                     return module2;
 
                 Scopes.TryGetValue(parentScopeId, out var parentScope);
                 parentScopeIdNullable = parentScope?.ParentScopeId;
             }
             throw new ConstructException($"Module not found: {type}, {callScope?.ScopeId}");
-        }
-    }
-
-    public readonly struct ModuleRelation : IEquatable<ModuleRelation>
-    {
-        public ScopeId BelongingScopeId { get; }
-        private IntPtr TypePtr { get; }
-
-        public ModuleRelation(ScopeId belongingScopeId, IntPtr typePtr)
-        {
-            BelongingScopeId = belongingScopeId;
-            TypePtr = typePtr;
-        }
-
-        public bool Equals(ModuleRelation other)
-        {
-            return BelongingScopeId.Equals(other.BelongingScopeId) && TypePtr == other.TypePtr;
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is ModuleRelation other && Equals(other);
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(BelongingScopeId, TypePtr);
         }
     }
 }

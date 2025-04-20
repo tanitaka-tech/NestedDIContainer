@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using NestedDIContainer.Unity.Runtime;
@@ -20,7 +21,7 @@ namespace TanitakaTech.NestedDIContainer
         {
             get
             {
-                _modules ??= new Modules(new Dictionary<ModuleRelation, object>(), Scopes);
+                _modules ??= new Modules(new Dictionary<(ScopeId, IntPtr), object>(), Scopes);
                 return _modules;
             }
         }
