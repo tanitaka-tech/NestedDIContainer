@@ -1,20 +1,25 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace TanitakaTech.NestedDIContainer
 {
     public readonly ref struct DependencyBinder
     {
-        private ScopeId ScopeId { get; }
+        private readonly ScopeId _scopeId;
+        private readonly Dictionary<ScopeId, IScope> _scopes;
+        private readonly Modules _modules;
 
-        public DependencyBinder(ScopeId scopeId)
+        public DependencyBinder(ScopeId scopeId, Dictionary<ScopeId, IScope> scopes, Modules modules)
         {
-            ScopeId = scopeId;
+            _scopeId = scopeId;
+            _scopes = scopes;
+            _modules = modules;
         }
-        
+
         public void ExtendScope(IExtendScope scope)
         {
-            GlobalProjectScope.Inject(scope, GlobalProjectScope.Scopes[ScopeId]);
+            GlobalProjectScope.Inject(scope, GlobalProjectScope.Scopes[_scopeId]);
             scope.Construct(this);
         }
         
@@ -24,10 +29,10 @@ namespace TanitakaTech.NestedDIContainer
             var constructor = type.GetConstructors().First();
             var parameters = constructor.GetParameters();
             var parameterValues = new object[parameters.Length];
-            GlobalProjectScope.Scopes.TryGetValue(ScopeId, out var scope);
+            _scopes.TryGetValue(_scopeId, out var scope);
             for (int i = 0; i < parameters.Length; i++)
             {
-                parameterValues[i] = GlobalProjectScope.Modules.Resolve(parameters[i].ParameterType, scope);
+                parameterValues[i] = _modules.Resolve(parameters[i].ParameterType, scope);
             }
             var instance = (T)Activator.CreateInstance(type, parameterValues);
 
@@ -44,7 +49,7 @@ namespace TanitakaTech.NestedDIContainer
         
         public void Bind(Type type, object instance)
         {
-            GlobalProjectScope.Modules.Bind(ScopeId, type, instance);
+            GlobalProjectScope.Modules.Bind(_scopeId, type, instance);
         }
         
         public void Bind<T>(T instance) => Bind(typeof(T), instance);
