@@ -1,25 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace TanitakaTech.NestedDIContainer
 {
     public readonly ref struct DependencyBinder
     {
-        private readonly ScopeId _scopeId;
-        private readonly Dictionary<ScopeId, IScope> _scopes;
-        private readonly Modules _modules;
+        private readonly ScopeContainer _scopeContainer;
 
-        public DependencyBinder(ScopeId scopeId, Dictionary<ScopeId, IScope> scopes, Modules modules)
+        public DependencyBinder(ScopeContainer scopeContainer)
         {
-            _scopeId = scopeId;
-            _scopes = scopes;
-            _modules = modules;
+            _scopeContainer = scopeContainer;
         }
 
         public void ExtendScope(IExtendScope scope)
         {
-            GlobalProjectScope.Inject(scope, GlobalProjectScope.Scopes[_scopeId]);
+            _scopeContainer.Inject(scope);
             scope.Construct(this);
         }
         
@@ -29,10 +24,9 @@ namespace TanitakaTech.NestedDIContainer
             var constructor = type.GetConstructors().First();
             var parameters = constructor.GetParameters();
             var parameterValues = new object[parameters.Length];
-            _scopes.TryGetValue(_scopeId, out var scope);
             for (int i = 0; i < parameters.Length; i++)
             {
-                parameterValues[i] = _modules.Resolve(parameters[i].ParameterType, scope);
+                parameterValues[i] = _scopeContainer.Resolve(parameters[i].ParameterType);
             }
             var instance = (T)Activator.CreateInstance(type, parameterValues);
 
@@ -49,7 +43,7 @@ namespace TanitakaTech.NestedDIContainer
         
         public void Bind(Type type, object instance)
         {
-            GlobalProjectScope.Modules.Bind(_scopeId, type, instance);
+            _scopeContainer.Bind(type, instance);
         }
         
         public void Bind<T>(T instance) => Bind(typeof(T), instance);
