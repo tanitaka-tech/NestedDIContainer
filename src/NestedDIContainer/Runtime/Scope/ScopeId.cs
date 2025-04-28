@@ -4,17 +4,17 @@ namespace TanitakaTech.NestedDIContainer
 {
     public readonly struct ScopeId : IEquatable<ScopeId>
     {
-        private Guid Value { get; }
+        private readonly Guid _value;
 
         private ScopeId(Guid value)
         {
-            Value = value;
+            _value = value;
         }
         public static ScopeId Create() => new ScopeId(Guid.NewGuid());
 
         public bool Equals(ScopeId other)
         {
-            return Value.Equals(other.Value);
+            return _value.Equals(other._value);
         }
 
         public override bool Equals(object obj)
@@ -24,7 +24,17 @@ namespace TanitakaTech.NestedDIContainer
 
         public override int GetHashCode()
         {
-            return Value.GetHashCode();
+            return _value.GetHashCode();
+        }
+
+        public static bool operator ==(ScopeId left, ScopeId right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(ScopeId left, ScopeId right)
+        {
+            return !left.Equals(right);
         }
     }
 }
