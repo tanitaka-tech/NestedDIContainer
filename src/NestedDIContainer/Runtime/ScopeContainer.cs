@@ -57,6 +57,24 @@ namespace TanitakaTech.NestedDIContainer
             }
             throw new ConstructException($"Module not found: {type}");
         }
+        
+        public T TryResolve<T>()
+        {
+            return (T)TryResolve(typeof(T));
+        }
+        
+        public object TryResolve(Type type)
+        {
+            var typePtr = type.TypeHandle.Value;
+            if (_value.TryGetValue(typePtr, out var module))
+                return module;
+
+            if (_parentScopeContainer != null)
+            {
+                return _parentScopeContainer.Resolve(type);
+            }
+            return null;
+        }
 
         private const BindingFlags MemberBindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly;
         public void Inject(object injectableObject)
@@ -70,6 +88,13 @@ namespace TanitakaTech.NestedDIContainer
                 {
                     field.SetValue(injectableObject, Resolve(field.FieldType));
                 }
+#if USE_INJECT_OPTIONAL
+                var injectOptionalAttr = field.GetCustomAttribute<InjectOptionalAttribute>();
+                if (injectOptionalAttr != null)
+                {
+                    field.SetValue(injectableObject, TryResolve(field.FieldType));
+                }
+#endif
             }
 
             var props = type.GetProperties(MemberBindingFlags);
@@ -80,6 +105,13 @@ namespace TanitakaTech.NestedDIContainer
                 {
                     prop.SetValue(Scope, Resolve(prop.PropertyType));
                 }
+#if USE_INJECT_OPTIONAL
+                var injectOptionalAttr = prop.GetCustomAttribute<InjectOptionalAttribute>();
+                if (injectOptionalAttr != null)
+                {
+                    prop.SetValue(injectableObject, TryResolve(prop.PropertyType));
+                }
+#endif
             }
         }
     }
