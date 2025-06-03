@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
-using NestedDIContainer.Unity.Runtime;
+using TanitakaTech.NestedDIContainer.Runtime;
 
 namespace TanitakaTech.NestedDIContainer
 {
