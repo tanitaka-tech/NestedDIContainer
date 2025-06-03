@@ -71,7 +71,7 @@ namespace TanitakaTech.NestedDIContainer
 
             if (_parentScopeContainer != null)
             {
-                return _parentScopeContainer.Resolve(type);
+                return _parentScopeContainer.TryResolve(type);
             }
             return null;
         }
