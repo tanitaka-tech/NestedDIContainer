@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq;
+using System.Threading;
 
 namespace TanitakaTech.NestedDIContainer
 {
@@ -12,33 +12,10 @@ namespace TanitakaTech.NestedDIContainer
             _scopeContainer = scopeContainer;
         }
 
-        public void ExtendScope(IExtendScope scope)
+        public void ExtendScope(IExtendScope scope, CancellationToken scopeLifetime)
         {
             _scopeContainer.Inject(scope);
-            scope.Construct(this);
-        }
-        
-        public T ExtendScope<T>() where T : IExtendScope
-        {
-            var type = typeof(T);
-            var constructor = type.GetConstructors().First();
-            var parameters = constructor.GetParameters();
-            var parameterValues = new object[parameters.Length];
-            for (int i = 0; i < parameters.Length; i++)
-            {
-                parameterValues[i] = _scopeContainer.Resolve(parameters[i].ParameterType);
-            }
-            var instance = (T)Activator.CreateInstance(type, parameterValues);
-
-            instance.Construct(this);
-
-            return instance;
-        }
-        
-        public TResult ExtendScopeWithResult<T, TResult>() where T : IExtendScopeWithResult<TResult>
-        {
-            var instance = ExtendScope<T>();
-            return instance.GetResult();
+            scope.Construct(this, scopeLifetime);
         }
         
         public void Bind(Type type, object instance)

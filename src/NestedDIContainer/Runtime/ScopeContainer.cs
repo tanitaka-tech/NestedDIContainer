@@ -76,7 +76,7 @@ namespace TanitakaTech.NestedDIContainer
             return null;
         }
 
-        private const BindingFlags MemberBindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+        private const BindingFlags MemberBindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
         public void Inject(object injectableObject)
         {
             var type = injectableObject.GetType();
