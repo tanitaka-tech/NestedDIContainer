@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 
 namespace TanitakaTech.NestedDIContainer
@@ -6,38 +6,40 @@ namespace TanitakaTech.NestedDIContainer
     public readonly ref struct DependencyBinder
     {
         private readonly ScopeContainer _scopeContainer;
+        public CancellationToken ScopeLifetime { get; }
 
-        public DependencyBinder(ScopeContainer scopeContainer)
+        public DependencyBinder(ScopeContainer scopeContainer, CancellationToken scopeLifetime)
         {
             _scopeContainer = scopeContainer;
+            ScopeLifetime = scopeLifetime;
         }
 
-        public void ExtendScope(IExtendScope scope, CancellationToken scopeLifetime)
+        public void ExtendScope(IExtendScope scope)
         {
             _scopeContainer.Inject(scope);
-            scope.Construct(this, scopeLifetime);
+            scope.Construct(this);
         }
-        
+
         public void Bind(Type type, object instance)
         {
             _scopeContainer.Bind(type, instance);
         }
-        
+
         public void Bind<T>(T instance) => Bind(typeof(T), instance);
-        
+
         public void Bind<TInstance, T1, T2>(TInstance instance) where TInstance : T1, T2
         {
             Bind(typeof(T1), instance);
             Bind(typeof(T2), instance);
         }
-        
+
         public void Bind<TInstance, T1, T2, T3>(TInstance instance) where TInstance : T1, T2, T3
         {
             Bind(typeof(T1), instance);
             Bind(typeof(T2), instance);
             Bind(typeof(T3), instance);
         }
-        
+
         public void Bind<TInstance, T1, T2, T3, T4>(TInstance instance) where TInstance : T1, T2, T3, T4
         {
             Bind(typeof(T1), instance);
@@ -45,7 +47,7 @@ namespace TanitakaTech.NestedDIContainer
             Bind(typeof(T3), instance);
             Bind(typeof(T4), instance);
         }
-        
+
         public void Bind<TInstance, T1, T2, T3, T4, T5>(TInstance instance) where TInstance : T1, T2, T3, T4, T5
         {
             Bind(typeof(T1), instance);
@@ -54,7 +56,7 @@ namespace TanitakaTech.NestedDIContainer
             Bind(typeof(T4), instance);
             Bind(typeof(T5), instance);
         }
-        
+
         public void Bind<TInstance, T1, T2, T3, T4, T5, T6>(TInstance instance) where TInstance : T1, T2, T3, T4, T5, T6
         {
             Bind(typeof(T1), instance);
