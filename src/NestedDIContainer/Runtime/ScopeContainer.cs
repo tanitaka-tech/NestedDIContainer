@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using TanitakaTech.NestedDIContainer.Runtime;
 
@@ -77,41 +79,62 @@ namespace TanitakaTech.NestedDIContainer
         }
 
         private const BindingFlags MemberBindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-        public void Inject(object injectableObject)
+
+        /// <summary>
+        /// 型ごとの注入先のフィールドとプロパティ。
+        /// NOTE: 注入のたびに GetFields / GetProperties と、メンバーごとの GetCustomAttribute を呼ぶと、
+        ///       注入するオブジェクトが多い画面（シーンの読み込み）でリフレクションの時間が積み重なる。同じ型の結果は変わらないのでキャッシュする
+        /// </summary>
+        private sealed class InjectionTargets
         {
-            var type = injectableObject.GetType();
-            var fields = type.GetFields(MemberBindingFlags);
-            foreach (var field in fields)
+            public readonly FieldInfo[] Fields;
+            public readonly FieldInfo[] OptionalFields;
+            public readonly PropertyInfo[] Properties;
+            public readonly PropertyInfo[] OptionalProperties;
+
+            public InjectionTargets(Type type)
             {
-                var injectAttr = field.GetCustomAttribute<InjectAttribute>();
-                if (injectAttr != null)
-                {
-                    field.SetValue(injectableObject, Resolve(field.FieldType));
-                }
+                var fields = type.GetFields(MemberBindingFlags);
+                Fields = fields.Where(field => field.GetCustomAttribute<InjectAttribute>() != null).ToArray();
+                var props = type.GetProperties(MemberBindingFlags);
+                Properties = props.Where(prop => prop.GetCustomAttribute<InjectAttribute>() != null).ToArray();
 #if USE_INJECT_OPTIONAL
-                var injectOptionalAttr = field.GetCustomAttribute<InjectOptionalAttribute>();
-                if (injectOptionalAttr != null)
-                {
-                    field.SetValue(injectableObject, TryResolve(field.FieldType));
-                }
+                OptionalFields = fields.Where(field => field.GetCustomAttribute<InjectOptionalAttribute>() != null).ToArray();
+                OptionalProperties = props.Where(prop => prop.GetCustomAttribute<InjectOptionalAttribute>() != null).ToArray();
+#else
+                OptionalFields = Array.Empty<FieldInfo>();
+                OptionalProperties = Array.Empty<PropertyInfo>();
 #endif
             }
+        }
 
-            var props = type.GetProperties(MemberBindingFlags);
-            foreach (var prop in props)
+        private static readonly ConcurrentDictionary<Type, InjectionTargets> InjectionTargetsCache = new ConcurrentDictionary<Type, InjectionTargets>();
+        private static readonly Func<Type, InjectionTargets> CreateInjectionTargets = type => new InjectionTargets(type);
+
+        private static InjectionTargets GetInjectionTargets(Type type)
+        {
+            return InjectionTargetsCache.GetOrAdd(type, CreateInjectionTargets);
+        }
+
+        public void Inject(object injectableObject)
+        {
+            var targets = GetInjectionTargets(injectableObject.GetType());
+            foreach (var field in targets.Fields)
             {
-                var injectAttr = prop.GetCustomAttribute<InjectAttribute>();
-                if (injectAttr != null)
-                {
-                    prop.SetValue(injectableObject, Resolve(prop.PropertyType));
-                }
-#if USE_INJECT_OPTIONAL
-                var injectOptionalAttr = prop.GetCustomAttribute<InjectOptionalAttribute>();
-                if (injectOptionalAttr != null)
-                {
-                    prop.SetValue(injectableObject, TryResolve(prop.PropertyType));
-                }
-#endif
+                field.SetValue(injectableObject, Resolve(field.FieldType));
+            }
+            foreach (var field in targets.OptionalFields)
+            {
+                field.SetValue(injectableObject, TryResolve(field.FieldType));
+            }
+
+            foreach (var prop in targets.Properties)
+            {
+                prop.SetValue(injectableObject, Resolve(prop.PropertyType));
+            }
+            foreach (var prop in targets.OptionalProperties)
+            {
+                prop.SetValue(injectableObject, TryResolve(prop.PropertyType));
             }
         }
     }
