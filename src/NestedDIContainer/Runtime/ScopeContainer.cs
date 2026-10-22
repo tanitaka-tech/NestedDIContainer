@@ -103,7 +103,7 @@ namespace TanitakaTech.NestedDIContainer
                 var injectAttr = prop.GetCustomAttribute<InjectAttribute>();
                 if (injectAttr != null)
                 {
-                    prop.SetValue(Scope, Resolve(prop.PropertyType));
+                    prop.SetValue(injectableObject, Resolve(prop.PropertyType));
                 }
 #if USE_INJECT_OPTIONAL
                 var injectOptionalAttr = prop.GetCustomAttribute<InjectOptionalAttribute>();
